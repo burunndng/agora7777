@@ -1,0 +1,156 @@
+**Resonance Playbook v4: Definitive Execution Blueprint**
+
+This is the hardened synthesis of all prior versions and red-team critiques. It takes **V1’s ultra-practical structure** (phased roadmap with tables, concrete onboarding flow, 50+ taste tags, Weekly Drop template, metrics, deadly sins) as the backbone and layers in **V2’s elegant long-term system** (dual Social/Resonance Modes, local Resonance Vectors with abstracted embeddings and complementary archetypes, contextual prompts, outcome feedback, progressive Masks/unmasking, privacy-first architecture, high-signal single-player Resonance Map).
+
+The result is immediately executable for the first 6–12 months while preserving the soul: a vibrant queer cultural space (Reddit-style decentralized communities) where **personality and shared cultural depth create “social gravity”** before photos or superficial swiping. Matching is emergent, opt-in, and consent-driven. Cold start is treated as a high-touch **matchmaking campfire**—small and intentional becomes the brand moat.
+
+### Core Insight
+Your behavioral/implicit data advantage only activates after density. For the first 12–18 months, lean on explicit taste tags, manual curation by you + Founding Tribe, and community events. Build an intrinsically valuable cultural space first. Matching is the reward for survival, not the engine that creates it.
+
+**Community > Matching. Opt-in everything. Progressive trust. Hybrid tech (decentralize identity/sensitive data early; compute can be federated/centralized until scale justifies heavier ZK/MPC).**
+
+### Three-Phase Roadmap
+
+#### Phase 0: The Campfire (0–500 users, 0–6 months)
+**Mindset**: Curated dinner party / exclusive digital members club. “Small and intentional” is the feature.
+
+**What you build**:
+- 4–6 hyper-niche seeded communities (“Synthwave Queers,” “Queer TTRPG Archivists,” “Leather Intellectuals,” “Gay Hiking & Nature,” “Indie Games & Deep Lore”)
+- Dual Modes from day 1 (default **Social Mode**—clean Reddit-style feed with zero dating signals; **Resonance Mode** is an explicit tab/toggle)
+- Rich but engaging onboarding that instantly generates a visual, shareable **Resonance Map**
+- Weekly Resonance Drop (2–4 profiles, 80% manual curation + tag overlap, delivered Friday)
+- Simple tag-based matching + single-player Resonance Map (evolves with activity)
+- Optional “Soft Mask” (temporary handle in Resonance Mode for privacy-conscious users)
+- Events as primary matching (voice rooms, watch parties, Resonance Circles of 6–8)
+
+**What you avoid**:
+- Real-time or location-based matching below city/region
+- Heavy implicit vectors (not enough data yet)
+- Full ephemeral Masks or complex ZKP (introduce softly)
+- Any visible dating signals in Social Mode
+
+**Founder role**: Personally onboard first 100–150. Seed content. Manually curate drops. Host events. Offer “Founding Tribe” status (badges, direct feedback channel, early governance voice).
+
+**Unlock to Phase 1**: 500 WAU, 3+ cities/scenes with ≥80–100 actives, ≥2 posts/comments per user per week average.
+
+#### Phase 1: The Bonfire (500–3,000 users, 6–15 months)
+**Mindset**: High-trust members’ club with waiting-list energy.
+
+**New additions**:
+- Local client-side **Resonance Vectors** (light embeddings from tags + engagement; abstracted clusters, not raw sub overlaps)
+- Complementary archetypes (derived: Jester + Archivist, Connector + Explorer, etc.)
+- Opt-in **Resonance Lens** in Social Mode (user-activated only)
+- Contextual Resonance Prompts (trigger after deep thread engagement)
+- City/Scene Pods + lighter geographic filtering
+- Outcome Feedback Loop (private, encrypted, improves future matches)
+- Soft Masks become more prominent but still optional
+
+**Still avoid**: Full neighborhood filtering, always-on Radar, aggressive real-time swiping, heavy ZKP for everything.
+
+**New metrics emphasis**: Messages sent per match (>55%), “Felt immediately known by my tribe” feedback (>35%), 14-day retention (>35%).
+
+#### Phase 2: The Beacon (3,000+ users, 15–24+ months)
+**Mindset**: Scalable platform with the full engine running on top of a healthy culture.
+
+**Unlock triggers**: 3,000+ WAU, 5+ cities/scenes with ≥200 actives, proven predictive power of vectors via feedback correlation.
+
+**New additions**:
+- Full multi-layer Resonance Engine (explicit + implicit vectors + archetypes + outcome data)
+- Default **Masks** (ephemeral DIDs with zero automatic link to main social identity)
+- ZK / MPC for intimate attributes (HIV/PrEP status categories, specific kinks, strict monogamy vs. ENM)
+- Progressive Unmasking Ceremony (cryptographic, user-controlled key exchange after mutual positive signals—reveals post history, main username, etc.)
+- Contextual Openers (AI-suggested icebreakers based on real shared content)
+- Neighborhood-level filtering where density supports it
+- Optional always-on elements for power users
+
+**Decentralization priority** (pragmatic, no theater):
+1. Identity (DIDs) — Day 1
+2. Sensitive attribute storage & user-controlled disclosure — Phase 1
+3. Matching of encrypted vectors (federated relay) — Phase 1–2
+4. ZK for high-stakes filters — Phase 2
+5. Content storage & full compute — only as needed
+
+### Photos & Media Strategy (New)
+Personality and taste lead. In Social Mode and early Resonance profiles, photos are optional, limited (1–2), or blurred until mutual Resonance Request is accepted. Once connected under Masks, users can progressively reveal more media. This preserves the “discovered by my tribe” feeling and reduces superficial rejection or objectification.
+
+### Onboarding Flow (Phase 0 – World-Building Experience)
+Keep it to ~8–10 progressive screens. Frame as “Help shape the early tribe—your answers directly influence matches and culture.” Visual, card-based, skippable, with live Resonance Map preview that updates.
+
+1. **Hook**: “Most apps match on photos. We match on who you actually are and what you care about. Let’s find your people.”
+2–3. **Basics** (casual cards): Age range, city/region, current goals (“LTR,” “Deep Chat / Pen Pal,” “Co-op Gaming,” “Virtual Hang,” “Local Coffee eventually”).
+4–7. **Taste & Vibe** (mix of V1 questions + V2 categories, intensity sliders 1–5, select 8–12 total):
+   - *Friday night vibe?* (Clubbing, House party, Couch + gaming, Intimate dinner, Nature escape)
+   - *Artist or work you’d defend in an argument?* (grid)
+   - *Take on exclusivity/monogamy conversation?*
+   - *At a party you don’t know anyone, you…* (find the dog, aux cord, deep conversation, exit, most interesting stranger)
+   - Light archetype reflection: “I tend to…” (crack jokes / archive & research / connect people / provoke ideas / explore new experiences)
+8. **Community selection**: Pick 2–3 seeded pods (“Which of these feel like home?”).
+9. **Payoff**: Beautiful visual **Resonance Map** (“78th percentile Cyber-Queer Archivist with strong Nurturer energy and Synthwave core identity”). Shareable artifact. “Your first Resonance Drop arrives this Friday. See you in the threads.”
+
+**Transparency note** on final screen: “We are intentionally small. Matches are curated and often global right now. You’re a founder of this tribe.”
+
+### Resonance Tags (~55, with intensity sliders)
+Organized for onboarding and vector building. Users select 8–15 during/after onboarding.
+
+**Aesthetics & Energy**: Cyberqueer, Dark Academia, Sporty Masc, Soft Butch, Maximalist Chaos, Minimalist, Leather, Puppy, Bear, Twink, Alt, Trad, Club Kid, Homebody Cozy, Adventurous Wanderer, Night Owl, Morning Person.
+
+**Cultural Interests**: Indie Games, TTRPGs / Actual Play, Horror Media, Art House / Experimental Film, Reality TV (guilty pleasure), Anime, Theatre/Musicals, Podcasts, Archival/History, Literature/Poetry, Drag/Ballroom, Fitness Culture, Hiking & Nature reconnection.
+
+**Music**: Synthwave / Indie Electronic, House/Techno, Hyperpop, Metal/Hardcore, Hip Hop, Indie/Alternative, Classical/Jazz, Country (yes really).
+
+**Mind & Values**: Tech/Programming, Political Theory (abstracted: Progressive, Radical, Apolitical), Philosophy/Big Questions, Psychology/Self-improvement, Science/Space, History.
+
+**Social & Lifestyle**: Introvert energy, Extrovert energy, Deep talk > small talk, Small gatherings > big parties, Cooking/Food obsession, Fashion/Streetwear, Plants/Gardening, Travel, Homemaking/Nesting, Team sports, Outdoor adventure (climbing, etc.).
+
+**Relationship Texture**: Monogamy, Ethical Non-Monogamy, Relationship Anarchy, Sex-Positive, Low Sex Drive, High Kink, Vanilla, High Communication, Quality Time, Physical Touch, Acts of Service, Words of Affirmation, Independent Togetherness, Community-Oriented vs Individualist.
+
+**Hard Boundaries** (separate, ZK-eligible later): HIV/PrEP/U=U preferences, strict dealbreakers, drug preferences.
+
+### Weekly Resonance Drop Template (Push + In-App)
+**Subject/Title**: Your Resonance Drop is here 🔥 (2–4 profiles)
+
+**Content**:
+> Hey [Name], this week the tribe found people whose vibe overlaps with yours in meaningful ways. These are curated with care while we’re still growing.
+>
+> **[Profile A – Taste Map thumbnail]**
+> Strong overlap in thoughtful synthwave curation and “deep talk > small talk.” Complementary archetypes (Jester + Archivist). Both seeking pen-pal / deep chat energy right now.
+>
+> [View Profile → Suggests 2 contextual openers]
+>
+> Same for Profile B…
+>
+> Remember: our community is small and intentional. These matches come from real cultural resonance. See you in the threads or Resonance Circles this week.
+
+### Cold-Start Seeding & Tactics
+- **Target scenes**: Gay indie electronic/synthwave, queer TTRPG/indie gaming, thoughtful leather/kink intellectual, gay hiking/nature, queer alt-lit/archival writers. Approach existing Discords, small subreddits, Twitch circles with personal invites.
+- **Founding Tribe**: First 100 get badges, direct voice with you, early governance input. Interview them.
+- **Activity drivers**: Seeded AMAs, watch parties, controversial-but-kind discussion prompts, weekly Resonance Circles (small group voice for high-compatibility cohorts).
+- **Single-player value**: Evolving Resonance Map that “levels up” with posting, tagging, and engagement. Shareable on external platforms.
+
+### Success Metrics
+| Metric                        | Phase 0 Target | Phase 1 Target | Phase 2 Target |
+|-------------------------------|----------------|----------------|----------------|
+| Weekly Active Users           | 200+           | 1,500+         | 5,000+         |
+| Messages / Match              | 40%+           | 55%+           | 65%+           |
+| 14-day Retention              | 25%+           | 35%+           | 45%+           |
+| “Felt known by my tribe” feedback | —            | 35%+           | 50%+           |
+| Avg posts/comments per user/week | 1.5+        | 2.5+           | 3.5+           |
+| % Matches from community context | —             | 40%+           | 60%+           |
+
+### Three Deadly Sins (Avoid at All Costs)
+1. **Premature optimization** — Don’t build full ZK or implicit vectors for 80 users. Don’t add neighborhood filtering with 12 people in a city.
+2. **Trusting the algorithm too early** — You (and trusted curators) will manually shape matches and seed content for months. Accept it. Data earns the right to drive decisions.
+3. **Hiding behind decentralization or technology** — Users want to feel seen and safe by their tribe, not hear about DHTs or relays. Experience first, architecture second. No visible dating signals in normal browsing.
+
+### Final Word
+This blueprint turns the cold-start ghost-town risk into an exclusive, high-trust tribe that people will evangelize. By the time you flip the switch to the full Resonance Engine, you will have genuine density, authentic behavioral data, and a culture that rewards depth over superficiality.
+
+The gay community doesn’t need another meat market. It needs to feel **discovered through genuine cultural resonance**. This does that—safely, progressively, and with community at the center.
+
+Ready for the next layer? I can provide:
+- Wireframe descriptions for the Resonance Map and modes
+- Sample Discord seeding scripts + invitation copy
+- Detailed technical appendix (local vector computation, federated relay sketch, ZK integration points)
+- Moderation & governance plan for early community health
+
+Just say the word. This is build-ready.

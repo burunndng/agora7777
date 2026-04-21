@@ -1,0 +1,19 @@
+{
+  "name": "Agora",
+  "short_name": "Agora",
+  "description": "A decentralized, censorship-resistant forum on Nostr.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#ff7a00",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

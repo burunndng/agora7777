@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Agora"
+version = "1.0.0"
+id = "artifacts/agora"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 5000
+
+[services.development]
+run = "bash ../../scripts/start-with-anubis.sh"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/agora", "run", "build" ]
+publicDir = "artifacts/agora/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "5000"
+BASE_PATH = "/"

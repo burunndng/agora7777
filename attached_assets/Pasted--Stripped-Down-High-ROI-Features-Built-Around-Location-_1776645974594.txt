@@ -1,0 +1,140 @@
+# Stripped Down: High ROI Features Built Around Location
+
+---
+
+## The Core Product in One Sentence
+
+**A forum where you already know something real about people, plus location to find them near you.**
+
+That's it. Everything else is secondary.
+
+---
+
+## The Stack Ranked By ROI
+
+### 1. Location + Profile From Forum History (Build This First)
+
+This is your entire moat in one feature.
+
+When someone opens the location view they see nearby users but each card shows:
+- One photo
+- Which communities they post in
+- One recent post or comment they wrote
+
+That's it. No stats, no laundry list of interests.
+
+**Why this is high ROI:**
+- You already have the forum data, you're just surfacing it differently
+- Instant differentiation from Grindr - you know something real about this person before you message
+- Minimal build - location layer on top of existing profiles
+
+**Build time:** 4-6 weeks for a competent small team
+**Competitive impact:** Immediate and obvious to users
+
+---
+
+### 2. Simple Status Signal
+
+One toggle on the home screen:
+
+**"Open to meet"** - on or off
+
+When it's on:
+- You appear in the location view
+- You see others who are also on
+- It auto-turns off after 4 hours
+
+**Why this is high ROI:**
+- Solves the core Grindr anxiety of not knowing if someone actually wants to connect right now
+- Opt-in means people who appear are actually available - higher conversion to real conversations
+- Technically trivial to build
+- Creates a daily active usage habit - people toggle it when they go out
+
+**Build time:** 1 week
+**Competitive impact:** High - Grindr has no equivalent, you're always "on" there whether you want to be or not
+
+---
+
+### 3. One Conversation Starter Mechanic
+
+When you tap someone in the location view you see their profile and one prompt:
+
+**"Start with something you have in common"**
+
+The app suggests: "You both post in [community]" or "You both commented on [topic recently]"
+
+One tap sends a pre-written opener with that context. They see it, they can reply or ignore.
+
+**Why this is high ROI:**
+- Solves the blank message box problem that kills conversion on every dating app
+- Uses your existing forum data as the engine
+- Higher response rates mean users feel the app works, retention goes up
+- No AI needed, just a simple matching query
+
+**Build time:** 2 weeks
+**Competitive impact:** Very high - this is the thing users will tell their friends about
+
+---
+
+### 4. DMs Gated by Mutual Forum Activity
+
+Not open DMs. You can message someone if:
+- You both post in at least one same community, OR
+- They have "open to meet" toggled on
+
+**Why this is high ROI:**
+- Dramatically reduces harassment with zero moderation overhead
+- Users feel safer = higher retention especially for users who've left Grindr due to harassment
+- Creates an organic incentive to actually participate in forums (to unlock messaging)
+- This incentive loop grows your core forum engagement as a side effect
+
+**Build time:** 1 week (it's just a permission check)
+**Competitive impact:** High for retention, especially female and nonbinary users in your community
+
+---
+
+## What to Cut Completely (For Now)
+
+| Feature | Why Cut |
+|---|---|
+| Daily match algorithm | High build cost, needs data volume you may not have yet |
+| Video/voice chat | Infrastructure cost, moderation risk |
+| Events system | Complex, distraction from core |
+| Reputation scoring | Needs time and data to be meaningful |
+| Subscription tiers | Get users first, monetize second |
+
+---
+
+## The Actual MVP
+
+```
+Forum (existing)
+    +
+Location view showing nearby users with forum context
+    +
+Open to meet toggle
+    +
+Context-aware conversation starter
+    +
+Gated DMs
+```
+
+That's your product. Four additions to what you already have.
+
+---
+
+## Why This Beats Grindr on Its Own Terms
+
+Grindr's weakness isn't the location feature. It's that **location is all it has.**
+
+You have location plus actual knowledge of who someone is. That's a better product for anyone who's ever messaged someone on Grindr and had nothing to say after "hey."
+
+---
+
+## First Metric to Watch
+
+Not downloads. Not signups.
+
+**Conversation rate:** Of people who view someone's profile in the location view, what percentage send a message.
+
+If that number is higher than Grindr's equivalent (which is very low - most views result in nothing) you have product market fit. Everything else is optimization.

@@ -1,0 +1,2171 @@
+
+This updated plan addresses the **P0 and P1 vulnerabilities** identified in the red team analysis while remaining **100% free for the developer and the user**. The original plancan be found below this updates 
+
+We have strengthened the identity system, added Sybil resistance, fixed the media layer fragility, and addressed the mobile performance bottlenecks.
+
+---
+
+# Agora: Revised Execution Plan
+
+## 1. IDENTITY & SECURITY (The "Non-Brutable" Identity)
+
+We are moving from "Username+Password" to a **"Passphrase Identity"** model to prevent brute-force attacks and identity confusion.
+
+*   **Derivation**: Switch to **Argon2id** (via `@noble/hashes`). It is more resistant to GPU cracking than PBKDF2.
+*   **Entropy Requirement**: Minimum 12 characters. Use an on-screen "Strength Meter."
+*   **Identity Clarity**: Usernames are display names only. The **npub** is the unique ID. We will display a `short-npub` (e.g., `npub1...abcd`) next to every username to prevent impersonation.
+*   **Worker-Based Derivation**: Move Argon2 to a **Web Worker**. This prevents the UI from freezing on mobile devices during the 2-5 second derivation process.
+*   **NIP-05 Support**: Add a free "Verification" field where users can paste a NIP-05 identifier if they have one.
+
+## 2. SYBIL RESISTANCE (Anti-Spam)
+
+To prevent an attacker from creating 1,000 accounts to manipulate the algorithm for free:
+
+*   **NIP-13 Proof of Work (PoW)**: The client will mine a small difficulty (e.g., 16-20 bits) for every post. This takes ~1-3 seconds on a phone but makes mass-botting expensive.
+*   **Weighted Scoring**: The Collaborative Algorithm now weights votes based on the **account's age** (first seen timestamp) and **PoW difficulty** of the vote event. A vote from a 1-year-old account counts more than a vote from a 1-minute-old account.
+*   **Audit Log**: All moderation actions and community weight changes are published as Nostr events.
+
+## 3. RELIABLE MEDIA (The Redundant Layer)
+
+To fix the fragility of free hosting:
+
+*   **Multi-Publish**: Files are uploaded to **two** NIP-96 servers simultaneously. The Nostr event stores both URLs.
+*   **Capability Discovery**: The client fetches `/.well-known/nostr/nip96.json` from servers to determine their specific upload limits and auth requirements before attempting upload.
+*   **Metadata-Only Stripping**: Instead of re-encoding images (lossy), we use a byte-stripping approach to remove EXIF tags while preserving the original image data.
+
+---
+
+## 4. REVISED TECH STACK
+
+| Layer | Technology | Change from Original |
+| :--- | :--- | :--- |
+| **Identity** | **Argon2id** + Web Worker | Stronger than PBKDF2; non-blocking |
+| **Auth** | Passphrase + Unique Salt | Prevents rainbow table attacks |
+| **Spam Prot.** | **NIP-13 (PoW)** | Client-side mining for every post |
+| **Storage** | **Encrypted IndexedDB** | Secure cache (not just localStorage) |
+| **Transport** | WSS + Jittered Timestamps | NIP-59 compliance (privacy) |
+| **Bridge** | **CORS-Proxy Fallback** | Use `corsproxy.io` (free) for Lemmy |
+| **Security** | Meta-tag CSP | Tailored for GitHub Pages limitations |
+
+---
+
+## 5. UPDATED ARCHITECTURE (CORE MODULES)
+
+### 5.1 Secure Identity Derivation
+```typescript
+// src/lib/crypto/worker.ts -> Argon2id in a background thread
+import { argon2id } from '@noble/hashes/argon2';
+
+export async function derive(passphrase: string, salt: string) {
+  // Argon2id parameters tuned for mobile (Memory: 64MB, Iterations: 3)
+  return argon2id({
+    password: passphrase,
+    salt: salt,
+    t: 3, 
+    m: 65536, 
+    p: 1, 
+    dkLen: 32
+  });
+}
+```
+
+### 5.2 Sybil-Resistant Scoring
+```typescript
+// src/lib/algorithm/scoring.ts
+export function calculateWeight(event: NostrEvent) {
+  const pow = getPowDifficulty(event.id); // NIP-13
+  const accountAge = Date.now() - (event.created_at * 1000);
+  
+  // Weights: Older accounts and higher PoW = higher signal
+  const ageFactor = Math.log1p(accountAge / 86400000); 
+  return pow * ageFactor;
+}
+```
+
+---
+
+## 6. UPDATED EXECUTION ORDER (8 WEEKS)
+
+### Week 1: Identity & Security Foundations
+*   [ ] Setup SvelteKit + Tailwind.
+*   [ ] **Build Argon2id Web Worker.**
+*   [ ] Implement passphrase derivation with "Strength Meter."
+*   [ ] **Encrypted IndexedDB implementation** for event caching.
+*   [ ] Logic to display `Username (npub...123)`.
+
+### Week 2: The Nostr Engine (Sybil-Aware)
+*   [ ] Relay pool with **auto-reconnect and gap-fill logic.**
+*   [ ] **NIP-13 Proof of Work miner** (client-side).
+*   [ ] Thread tree builder (NIP-10).
+*   [ ] Metadata discovery (NIP-05).
+
+### Week 3: Communities & Collaborative Algorithm
+*   [ ] Community definitions (kind:34550).
+*   [ ] Collaborative scoring (Weight = PoW * AccountAge).
+*   [ ] Audit Log for moderation actions (kind:9000).
+
+### Week 4: Resilient Media Layer
+*   [ ] NIP-96 capability discovery.
+*   [ ] **Redundant upload** (Upload to 2 servers).
+*   [ ] Byte-level EXIF stripper (non-re-encoding).
+*   [ ] Click-to-load media proxy.
+
+### Week 5: Privacy & Messaging
+*   [ ] NIP-44/59 Private DMs with **jittered timestamps.**
+*   [ ] Panic Wipe (Ctrl+Shift+X).
+*   [ ] Meta-tag based CSP security policy.
+*   [ ] External Link Warning Dialog.
+
+### Week 6: ActivityPub & Search
+*   [ ] Lemmy Bridge using **CORS proxy fallback.**
+*   [ ] nostr.band Search integration.
+*   [ ] Local cache search.
+
+### Week 7: Refinement & Mobile
+*   [ ] PWA Manifest (Offline support).
+*   [ ] Mobile Safari "Persistent Storage" request.
+*   [ ] UI audit: Ensure 44px touch targets everywhere.
+
+### Week 8: Documentation & Deploy
+*   [ ] Final Security Audit (NPM Audit).
+*   [ ] GitHub Actions CI/CD to GitHub Pages.
+*   [ ] "User Privacy Manual" (honest transport disclosure).
+
+---
+
+## 7. CRITICAL "ALWAYS-FREE" INFRASTRUCTURE LIST
+
+| Service | Purpose | Constraint |
+| :--- | :--- | :--- |
+| **GitHub Pages** | Hosting | Static, Free |
+| **Argon2 / Web Worker** | Security | Client-side, Free |
+| **NIP-13 (PoW)** | Anti-Spam | Client-side, Free |
+| **corsproxy.io** | Lemmy Bridge | Public Proxy, Free |
+| **nostr.build / void.cat** | Media | NIP-96, Free |
+| **nostr.band** | Search | Public API, Free |
+| **Public Relays** | Transport | Damus/Nos.lol, Free |
+
+---
+
+## 8. SUMMARY OF RED-TEAM MITIGATIONS
+
+1.  **Anti-Brute Force**: Argon2id + 12-char minimum makes password cracking unfeasible.
+2.  **Anti-Impersonation**: NPUB identification is now mandatory in the UI.
+3.  **Anti-Spam**: Proof-of-Work makes botting Agora content computationally expensive for the attacker but free for the developer.
+4.  **Anti-Fragility**: Redundant NIP-96 publishing prevents "broken link" syndrome if one free server dies.
+5.  **Anti-Lag**: Web Workers keep the app responsive on cheap Android/iOS devices during crypto operations.
+
+
+PLAN BEFORE UPDATES :
+**The core problem to solve:**
+
+The previous version assumed users are privacy-maximalists who will configure Tor, manage relay connections, and understand cryptographic concepts. That's a tiny minority. Real users want it to just work — and we still want to preserve the decentralized, privacy-respecting architecture underneath.
+
+**What are we actually solving for?**
+- Transport privacy without requiring Tor
+- File storage without requiring users to set up pinning service API keys
+- Identity without requiring users to understand keypairs
+- The whole thing working on mobile browsers, not just desktop with extensions
+
+**Let me think through each concern and find always-free, no-configuration alternatives:**
+
+---
+
+**TRANSPORT PRIVACY (instead of Tor)**
+
+Options:
+1. **Tor** — requires configuration, breaks on mobile, slow
+2. **VPN** — costs money, requires trust in VPN provider
+3. **Just use WSS (TLS WebSockets)** — this IS the baseline. Relay operator sees your IP, ISP sees you connecting to relay domain but not content
+4. **Cloudflare for relay connections** — many relays already sit behind Cloudflare, which hides the origin server's IP
+5. **Always-free privacy proxies** — don't exist reliably
+6. **Privacy-by-architecture instead of privacy-by-transport** — design so that even if the relay sees your IP, the damage is limited (minimize what you POST, not just how you connect)
+
+**Decision**: Don't try to hide transport. Instead:
+- Use WSS (TLS) everywhere — content is encrypted in transit by default
+- Let users know what the relay sees (their IP and public events — that's it for public posts)
+- For truly sensitive use cases, recommend Tor Browser as an option but don't require it
+- Focus privacy engineering on: key separation, what data we collect, what we store
+
+This is honest and achievable. Most social platforms have the same transport privacy model (TLS). The difference is we don't have a central server that aggregates everything.
+
+---
+
+**FILE STORAGE (instead of requiring Pinata/web3.storage API keys)**
+
+Options:
+1. **Nostr.build** — free Nostr media hosting, no account needed, just upload
+2. **void.cat** — free, anonymous file hosting used by Nostr community
+3. **Blossom protocol** — new Nostr media spec (NIP-96 / BUD-01), servers host media for Nostr users
+4. **NIP-96** — HTTP File Storage Integration spec. Multiple free servers implement it. No API key needed for some.
+5. **Imgur/Catbox** — free image hosting, but centralized, not great for privacy
+6. **Keep Helia/IPFS locally** — browser node pins it locally, and web3.storage free tier works with a simple email signup (no credit card). 5GB free.
+7. **Mix**: Use NIP-96 servers as primary (zero config, just works), IPFS as optional enhancement
+
+**Decision**: Use **NIP-96** as the primary media layer. NIP-96 is a Nostr standard for HTTP file storage. Multiple servers implement it:
+- `https://nostr.build` — free, NIP-96 compliant
+- `https://void.cat` — free, NIP-96 compliant  
+- `https://nostrcheck.me` — free, NIP-96 compliant
+- `https://files.sovbit.host` — free
+
+No API keys. No account. Just POST the file, get back a URL. The user can configure which server they prefer but the default just works.
+
+IPFS remains as an **optional** enhancement layer for users who want it — but it's not required.
+
+---
+
+**IDENTITY (instead of requiring users to understand keypairs)**
+
+Options:
+1. **NIP-07 browser extensions** — nos2x, Alby — but requires installation
+2. **NIP-46 remote signer** — nsecBunker — requires setup
+3. **Generate key in browser, store encrypted** — works but "write down your 24 words" is scary for normal users
+4. **Magic link via Nostr** — doesn't make sense
+5. **Social login → derive Nostr key** — defeats privacy
+6. **Email + derive key server-side** — requires a server
+7. **Simple username + password → derive key deterministically** — user just needs to remember username+password, key is derived via Argon2/PBKDF2. Same credentials = same key everywhere. No seed phrase needed.
+8. **Optional: NIP-07 detected and preferred** if available
+
+**Decision**: 
+- Default: **username + password → deterministically derive Nostr keypair via Argon2id**
+- User just picks a username and password — they'll have the same key on every device
+- No seed phrases, no backups required (password IS the backup)
+- If NIP-07 extension detected, offer to use it instead
+- This is similar to how Amber (Android Nostr signer) and some other apps work
+- Warn: "If you forget your password, there is no recovery. We don't store it."
+
+---
+
+**RELAY SELECTION (instead of requiring users to configure)**
+
+Decision: Opinionated defaults. Pre-select a curated set of reliable, free public relays. User never needs to touch this. Advanced settings available for power users.
+
+---
+
+**IPFS / FILE STORAGE (revised)**
+
+Three tiers, all free, in order of simplicity:
+1. **NIP-96 servers** (default, zero config) — just works, multiple free servers, Nostr-native
+2. **IPFS via Helia** (optional enhancement) — for users who want true decentralization
+3. **web3.storage** (optional, email signup required) — for guaranteed persistence
+
+For the default experience: NIP-96. Files go to nostr.build or similar. URL is in the Nostr event. Works on mobile. No configuration.
+
+---
+
+**ENCRYPTION**
+
+Instead of requiring users to set up group keys and understand Double Ratchet:
+- Public posts: plaintext (that's the point of a forum)
+- Private DMs: **NIP-44** (built into nostr-tools v2, just works)
+- Private communities: Start simple — invite-only communities where membership is gated by community approval. Full E2E encryption is Phase 2.
+- Local storage: Still encrypt with password-derived key (transparent to user)
+
+---
+
+**WHAT EXISTING ALWAYS-FREE SERVICES CAN WE INTEGRATE?**
+
+Let me brainstorm exhaustively:
+
+| Service | Free Tier | What for |
+|---|---|---|
+| **nostr.build** | Unlimited (fair use) | NIP-96 media hosting |
+| **void.cat** | Free | NIP-96 media hosting backup |
+| **nostrcheck.me** | Free | NIP-96 + relay |
+| **GitHub Pages** | Free | Static hosting |
+| **Cloudflare Pages** | Free | Alternative static hosting |
+| **web3.storage** | 5GB free | IPFS pinning (optional) |
+| **Pinata** | 1GB free | IPFS pinning backup (optional) |
+| **Public Nostr relays** | Free (most) | damus.io, nos.lol, relay.nostr.band |
+| **nostr.band** | Free | Search (NIP-50), analytics |
+| **Alby** | Free | NIP-07 signer, Lightning |
+| **Lemmy public instances** | Free | ActivityPub content bridge |
+| **Kiwix / Wikipedia** | Free | Reference linking |
+| **Archive.org** | Free | Link archiving |
+
+**Services to explicitly NOT integrate:**
+- Google anything (privacy)
+- Facebook/Meta (privacy)
+- Twitter/X APIs (costs money now)
+- Cloudflare Analytics (tracking)
+- Any analytics service
+
+---
+
+**REVISED ARCHITECTURE:**
+
+```
+User's Browser
+├── SvelteKit Static App
+├── Nostr Layer (nostr-tools)
+│   ├── Default relays (pre-configured, free public relays)
+│   └── NIP-07 extension (if available, preferred)
+├── Media Layer (NIP-96)
+│   ├── nostr.build (default, zero config)
+│   ├── void.cat (fallback)
+│   └── IPFS/Helia (optional enhancement)
+├── Identity
+│   ├── Username + Password → deterministic keypair (default)
+│   └── NIP-07 extension (if detected, offer as option)
+└── Storage
+    └── Encrypted localStorage (password-derived key, transparent)
+```
+
+No Tor requirement. No API keys required. No seed phrases. Works on mobile.
+
+**What to cover in the rewrite:**
+1. Clean updated architecture
+2. Revised tech stack with service integrations
+3. Revised identity (username+password → key)
+4. NIP-96 as primary media layer, IPFS as optional
+5. Revised privacy model (honest: we use TLS, that's the transport layer)
+6. Everything else from before, simplified
+7. Updated execution order
+8. Updated package.json
+9. Service integration details (nostr.build API, etc.)
+
+Let me write this as a complete, clean, self-contained prompt.
+
+---
+
+# THE PROMPT
+
+---
+
+You are building **Agora** — a forum-style social platform for collaborative discourse built on Nostr and open protocols. It works like a regular web app for regular users, with decentralization and privacy happening underneath, transparently.
+
+**Design target**: A non-technical user should be able to sign up with a username and password, post in a community, upload an image, and come back on a different device — without understanding what a relay, keypair, or CID is.
+
+**Philosophical target**: The platform is decentralized and privacy-respecting by architecture. We do not lecture users about privacy or require technical setup to get value. Power users can go deeper; casual users just use it.
+
+This document is complete and self-contained. Make every undocumented decision yourself. Generate complete working files, not snippets.
+
+---
+
+## 1. PROJECT IDENTITY
+
+| Field | Value |
+|---|---|
+| **Name** | Agora |
+| **Tagline** | A forum for thinking together |
+| **Primary Protocol** | Nostr |
+| **Media Protocol** | NIP-96 (HTTP file storage) |
+| **Optional Media Enhancement** | IPFS via Helia |
+| **Bridge** | ActivityPub read bridge (Lemmy) |
+| **Infrastructure Cost** | $0 |
+| **Server Required** | No |
+| **Email Required** | No |
+| **Seed Phrases Required** | No |
+| **Tor Required** | No |
+
+---
+
+## 2. CORE PRINCIPLES
+
+```
+1. IT JUST WORKS
+   Default experience requires zero technical knowledge.
+   Decentralization is the implementation, not the UI.
+
+2. PROGRESSIVE DISCLOSURE
+   Simple surface. Power available underneath.
+   Username+password for casual users.
+   Keypair import for power users.
+   Tor for paranoid users. All welcome.
+
+3. COLLABORATIVE ALGORITHMS
+   Ranking rewards discourse quality, not engagement.
+   All scoring weights are visible and adjustable.
+   No dark patterns. No engagement traps.
+
+4. GENUINE PRIVACY (NOT THEATER)
+   We collect nothing we don't need.
+   What we say we encrypt, we actually encrypt.
+   We document exactly what is and isn't protected.
+   We don't oversell the security model.
+
+5. TRANSPARENT MODERATION
+   All mod actions are public Nostr events.
+   Reasons required. Reversible. Auditable.
+
+6. DATA SOVEREIGNTY
+   Users can export everything.
+   Content exists on multiple relays.
+   No lock-in.
+
+7. FREE AS IN BEER AND FREE AS IN FREEDOM
+   Zero cost to use and zero cost to run an instance.
+   Open source. No ads. No premium tier.
+```
+
+---
+
+## 3. ARCHITECTURE
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     USER'S BROWSER                              │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │               SvelteKit Static App                        │  │
+│  │                                                           │  │
+│  │  ┌─────────────┐ ┌──────────────┐ ┌──────────────────┐  │  │
+│  │  │  UI / Views │ │  Algorithm   │ │   Key Derivation │  │  │
+│  │  │  (Svelte)   │ │ (client-side │ │  (password →     │  │  │
+│  │  │             │ │  scoring)    │ │   Nostr keypair) │  │  │
+│  │  └──────┬──────┘ └──────┬───────┘ └────────┬─────────┘  │  │
+│  │         └───────────────┴──────────────────┘            │  │
+│  │                         │                                │  │
+│  │  ┌──────────────────────▼───────────────────────────┐   │  │
+│  │  │                Service Layer                      │   │  │
+│  │  │  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │   │  │
+│  │  │  │  Nostr   │  │  Media   │  │ ActivityPub   │  │   │  │
+│  │  │  │  Client  │  │(NIP-96 + │  │ Bridge        │  │   │  │
+│  │  │  │          │  │ opt IPFS)│  │ (Lemmy read)  │  │   │  │
+│  │  │  └────┬─────┘  └────┬─────┘  └───────┬───────┘  │   │  │
+│  │  └───────┼─────────────┼────────────────┼───────────┘   │  │
+│  │          │             │                │               │  │
+│  │  ┌───────▼──────┐ ┌────▼──────┐        │               │  │
+│  │  │  IndexedDB   │ │localStorage│        │               │  │
+│  │  │ (event cache)│ │(encrypted  │        │               │  │
+│  │  │              │ │ prefs+key) │        │               │  │
+│  │  └──────────────┘ └───────────┘        │               │  │
+│  └─────────────────────────────────────────┼───────────────┘  │
+└────────────────────────────────────────────┼────────────────────┘
+                                             │
+   ┌─────────────────────────────────────────┼─────────────────────┐
+   │            FREE EXTERNAL SERVICES       │                     │
+   │                                         │                     │
+   │  ┌──────────────────┐  ┌───────────────▼──────────────────┐  │
+   │  │  Nostr Relays    │  │  Media Hosting (NIP-96)          │  │
+   │  │  (WebSocket/TLS) │  │  ┌─────────────┐ ┌───────────┐  │  │
+   │  │                  │  │  │ nostr.build │ │ void.cat  │  │  │
+   │  │  • relay.damus.io│  │  │  (primary)  │ │(fallback) │  │  │
+   │  │  • nos.lol       │  │  └─────────────┘ └───────────┘  │  │
+   │  │  • nostr.band    │  │  ┌─────────────────────────────┐ │  │
+   │  │  • relay.snort.  │  │  │ IPFS / Helia (optional,    │ │  │
+   │  │    social        │  │  │ for power users)            │ │  │
+   │  │  • nos.lol       │  │  └─────────────────────────────┘ │  │
+   │  └──────────────────┘  └──────────────────────────────────┘  │
+   │                                                               │
+   │  ┌─────────────────────────────────────────────────────────┐  │
+   │  │  ActivityPub Sources (read-only)                        │  │
+   │  │  lemmy.ml, beehaw.org, kbin.social, etc.               │  │
+   │  └─────────────────────────────────────────────────────────┘  │
+   └───────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 4. TECH STACK
+
+| Concern | Technology | Notes |
+|---|---|---|
+| Frontend | **SvelteKit 2** + static adapter | Deployed to GitHub Pages |
+| CSS | **Tailwind CSS 3** | System fonts, zero external requests |
+| Nostr | **nostr-tools v2** | Relay pool, event creation, NIP-07 |
+| Identity | **Password → keypair** (PBKDF2 + SHA-256) | No seed phrases, no extensions required |
+| Media (default) | **NIP-96** (nostr.build + void.cat) | Zero config, free, Nostr-native |
+| Media (optional) | **Helia** (IPFS browser node) | Power user enhancement |
+| Crypto | **@noble/curves**, **@noble/hashes** | secp256k1, PBKDF2, SHA-256 |
+| Symmetric crypto | **WebCrypto API** (AES-GCM) | Browser-native, no dependency |
+| Markdown | **marked** + **DOMPurify** | Render + sanitize |
+| Local cache | **IndexedDB** via idb | Event cache, offline reading |
+| Search | **nostr.band API** + client fallback | NIP-50 compliant, free |
+| Hosting | **GitHub Pages** | Free, CI/CD via Actions |
+| CI/CD | **GitHub Actions** | Lint → test → build → deploy |
+
+**Always-free integrated services:**
+
+| Service | What For | Limits | Sign-up |
+|---|---|---|---|
+| **nostr.build** | Primary media hosting | Fair use, ~100MB/file | None |
+| **void.cat** | Media fallback | Free tier | None |
+| **nostrcheck.me** | Media + relay | Free | None |
+| **relay.damus.io** | Nostr relay | Free | None |
+| **nos.lol** | Nostr relay | Free | None |
+| **relay.nostr.band** | Nostr relay + NIP-50 search | Free | None |
+| **relay.snort.social** | Nostr relay | Free | None |
+| **purplepag.es** | Profile discovery relay | Free | None |
+| **nostr.band** | Search, trending, analytics | Free API | None |
+| **web3.storage** | IPFS pinning (optional) | 5GB free | Email only |
+| **Pinata** | IPFS pinning fallback (optional) | 1GB free | Email only |
+| **GitHub Pages** | App hosting | Free | GitHub account |
+
+**Zero required sign-ups. Every service above either requires no account or is truly optional.**
+
+---
+
+## 5. IDENTITY SYSTEM (The Key Decision)
+
+### 5.1 How It Works for Users
+
+```
+User sees:        "Choose a username and password"
+Under the hood:   PBKDF2(password, salt=username, iterations=250000)
+                  → 32 bytes → secp256k1 private key → Nostr keypair
+Result:           Same username+password = same keypair, always, everywhere
+                  No seed phrase. No backup file. Password IS the key.
+```
+
+### 5.2 Why This Approach
+
+| Concern | Solution |
+|---|---|
+| Works on mobile | ✅ No extension required |
+| No seed phrase | ✅ Password is the recovery mechanism |
+| Cross-device | ✅ Same password = same key on any device |
+| Power user escape hatch | ✅ Can import raw nsec or use NIP-07 |
+| Honest security | ⚠️ Key strength = password strength. Document this clearly. |
+
+### 5.3 Key Derivation
+
+```typescript
+// src/lib/crypto/derive.ts
+import { pbkdf2 } from '@noble/hashes/pbkdf2'
+import { sha256 } from '@noble/hashes/sha256'
+import { secp256k1 } from '@noble/curves/secp256k1'
+import { bytesToHex } from '@noble/hashes/utils'
+import { getPublicKey, nip19 } from 'nostr-tools'
+
+export interface DerivedKeypair {
+  secretKey: Uint8Array
+  publicKey: string    // hex
+  npub: string
+  nsec: string
+}
+
+export function deriveKeypairFromPassword(
+  username: string,
+  password: string
+): DerivedKeypair {
+  // Username is the salt — ensures same password → different key per username
+  // This also means you cannot use the same password for different usernames
+  // and get the same key (intentional — each username is a distinct identity)
+  const salt = new TextEncoder().encode(`agora:v1:${username.toLowerCase().trim()}`)
+  const pass = new TextEncoder().encode(password)
+
+  // 250,000 iterations — roughly 500ms on modern hardware
+  // Expensive enough to resist brute force, fast enough to not frustrate users
+  const secretKey = pbkdf2(sha256, pass, salt, { c: 250_000, dkLen: 32 })
+
+  // Ensure the key is valid for secp256k1 (almost certainly is, but check)
+  // If not, increment a counter and retry (deterministic)
+  let finalKey = secretKey
+  let attempt = 0
+  while (!secp256k1.utils.isValidPrivateKey(finalKey)) {
+    const saltWithCounter = new TextEncoder().encode(`agora:v1:${username}:${++attempt}`)
+    finalKey = pbkdf2(sha256, pass, saltWithCounter, { c: 250_000, dkLen: 32 })
+  }
+
+  const publicKey = bytesToHex(secp256k1.getPublicKey(finalKey, true).slice(1))
+
+  return {
+    secretKey: finalKey,
+    publicKey,
+    npub: nip19.npubEncode(publicKey),
+    nsec: nip19.nsecEncode(finalKey),
+  }
+}
+
+// For power users: import existing nsec directly
+export function keypairFromNsec(nsec: string): DerivedKeypair {
+  const { data: secretKey } = nip19.decode(nsec)
+  if (!(secretKey instanceof Uint8Array)) throw new Error('Invalid nsec')
+  const publicKey = bytesToHex(secp256k1.getPublicKey(secretKey, true).slice(1))
+  return {
+    secretKey,
+    publicKey,
+    npub: nip19.npubEncode(publicKey),
+    nsec,
+  }
+}
+```
+
+### 5.4 Personas (Multiple Identities)
+
+For users who want multiple identities, we derive additional keypairs deterministically:
+
+```typescript
+// Additional personas: derived from primary key + persona index
+// Username "alice" password "pw" → primary key
+// Username "alice:1" password "pw" → pseudonym 1 (same password, different username prefix)
+// Username "alice:anon" password "pw" → anonymous persona
+
+// For throwaway/anonymous posting: generate ephemeral key in browser
+// Not derived from password — truly one-time, discarded after session
+export function generateEphemeralKeypair(): DerivedKeypair {
+  const secretKey = secp256k1.utils.randomPrivateKey()
+  const publicKey = bytesToHex(secp256k1.getPublicKey(secretKey, true).slice(1))
+  return {
+    secretKey,
+    publicKey,
+    npub: nip19.npubEncode(publicKey),
+    nsec: nip19.nsecEncode(secretKey),
+  }
+}
+```
+
+### 5.5 NIP-07 Support (Power Users)
+
+```typescript
+// src/lib/nostr/nip07.ts
+// If user has a Nostr browser extension (nos2x, Alby, etc.),
+// detect it and offer it as an option.
+
+export function detectNip07(): boolean {
+  return typeof window !== 'undefined' && 'nostr' in window
+}
+
+export async function getPublicKeyFromNip07(): Promise<string> {
+  if (!detectNip07()) throw new Error('No NIP-07 extension found')
+  return (window as any).nostr.getPublicKey()
+}
+
+export async function signWithNip07(event: object): Promise<object> {
+  if (!detectNip07()) throw new Error('No NIP-07 extension found')
+  return (window as any).nostr.signEvent(event)
+}
+```
+
+### 5.6 Auth Store
+
+```typescript
+// src/lib/stores/auth.ts
+import { writable, derived } from 'svelte/store'
+import { deriveKeypairFromPassword, keypairFromNsec, generateEphemeralKeypair }
+  from '$lib/crypto/derive'
+import { encryptedStore } from '$lib/crypto/storage'
+import type { DerivedKeypair } from '$lib/crypto/derive'
+
+export type IdentityType = 'primary' | 'pseudonym' | 'ephemeral'
+
+export interface Persona {
+  label: string         // "Main", "Anonymous", user-assigned
+  type: IdentityType
+  keypair: DerivedKeypair
+  createdAt: number
+}
+
+export const personas = writable<Persona[]>([])
+export const activePersonaIndex = writable<number>(0)
+export const activePersona = derived(
+  [personas, activePersonaIndex],
+  ([$p, $i]) => $p[$i] ?? null
+)
+export const isLoggedIn = derived(personas, $p => $p.length > 0)
+
+// Login: derive key from username+password, store personas encrypted
+export async function login(username: string, password: string): Promise<void> {
+  const keypair = await deriveKeypairFromPassword(username, password)
+  const primary: Persona = {
+    label: username,
+    type: 'primary',
+    keypair,
+    createdAt: Math.floor(Date.now() / 1000),
+  }
+  personas.set([primary])
+  activePersonaIndex.set(0)
+  // Persist encrypted (password-derived key)
+  await encryptedStore.init(password)
+  await encryptedStore.set('personas', [{ label: username, type: 'primary', createdAt: primary.createdAt }])
+  // Note: we store persona metadata but NOT the keypair.
+  // The keypair is re-derived from password on each login.
+  // This means there is nothing stored that can be stolen to get the key.
+}
+
+export async function addEphemeralPersona(label: string): Promise<void> {
+  const keypair = generateEphemeralKeypair()
+  personas.update(ps => [...ps, { label, type: 'ephemeral', keypair, createdAt: Date.now() / 1000 }])
+}
+
+export function logout(): void {
+  personas.set([])
+  activePersonaIndex.set(0)
+}
+```
+
+---
+
+## 6. NOSTR PROTOCOL LAYER
+
+### 6.1 Event Kinds
+
+```typescript
+// src/lib/nostr/kinds.ts
+export const KIND = {
+  METADATA:              0,      // NIP-01: user profile
+  TEXT_NOTE:             1,      // NIP-01: post / reply
+  RELAY_LIST:          10002,    // NIP-65: relay preferences
+  LONG_FORM:           30023,    // NIP-23: long-form content
+  REACTION:                7,    // NIP-25: +/-/emoji reactions
+  REPORT:               1984,    // NIP-56: content report
+  MUTE_LIST:           10000,    // NIP-51: muted content
+  COMMUNITY_LIST:      10005,    // NIP-51: joined communities
+  GIFT_WRAP:            1059,    // NIP-59: sealed sender
+  PRIVATE_DM:             14,    // NIP-17: private DM (inside gift wrap)
+  COMMUNITY_DEFINITION: 34550,   // NIP-72: community metadata
+  COMMUNITY_APPROVAL:    4550,   // NIP-72: mod approval of post
+  FILE_METADATA:         1063,   // NIP-94: file announcement
+  // Agora custom
+  MOD_ACTION:            9000,
+  MOD_APPEAL:            9001,
+  GOV_PROPOSAL:          9100,
+  GOV_VOTE:              9101,
+} as const
+
+export const VOTE_CONTENT = {
+  upvote:       '+',
+  downvote:     '-',
+  insightful:   '🔍',
+  constructive: '🤝',
+  bridge:       '🌉',
+} as const
+
+export type VoteType = keyof typeof VOTE_CONTENT
+```
+
+### 6.2 Default Relay Configuration
+
+```typescript
+// src/lib/nostr/relays.ts
+// Pre-configured free public relays. User never needs to touch these.
+// Advanced users can add/remove in settings.
+
+export const DEFAULT_RELAYS: string[] = [
+  'wss://relay.damus.io',
+  'wss://nos.lol',
+  'wss://relay.snort.social',
+  'wss://relay.nostr.band',      // Good NIP-50 search support
+  'wss://purplepag.es',          // Profile metadata discovery
+  'wss://nostr.wine',
+]
+
+// Relays recommended for writing (high uptime, good coverage)
+export const WRITE_RELAYS: string[] = [
+  'wss://relay.damus.io',
+  'wss://nos.lol',
+  'wss://relay.snort.social',
+]
+
+// Relays with strong search support (NIP-50)
+export const SEARCH_RELAYS: string[] = [
+  'wss://relay.nostr.band',
+  'wss://nostr.wine',
+]
+```
+
+### 6.3 Relay Pool
+
+```typescript
+// src/lib/nostr/client.ts
+import { SimplePool } from 'nostr-tools'
+import { DEFAULT_RELAYS } from './relays'
+import { preferences } from '$lib/stores/preferences'
+import { get } from 'svelte/store'
+
+export const pool = new SimplePool()
+
+export function getUserRelays(): string[] {
+  const prefs = get(preferences)
+  return prefs.relays ?? DEFAULT_RELAYS
+}
+
+export async function publish(event: object): Promise<void> {
+  const relays = getUserRelays()
+  // Publish to all write relays, resolve when at least one confirms
+  await Promise.any(
+    pool.publish(relays, event as any)
+  )
+}
+
+export function subscribe(
+  filters: object[],
+  onEvent: (event: any) => void,
+  onEose?: () => void
+) {
+  const relays = getUserRelays()
+  return pool.subscribeMany(relays, filters as any, {
+    onevent: onEvent,
+    oneose: onEose,
+  })
+}
+```
+
+### 6.4 Event Creation
+
+```typescript
+// src/lib/nostr/events.ts
+import { finalizeEvent } from 'nostr-tools'
+import { activePersona } from '$lib/stores/auth'
+import { get } from 'svelte/store'
+
+function now() { return Math.floor(Date.now() / 1000) }
+function getKey(): Uint8Array {
+  const p = get(activePersona)
+  if (!p) throw new Error('Not logged in')
+  return p.keypair.secretKey
+}
+
+// ─── Community ────────────────────────────────────────────────────
+export function buildCommunityEvent(draft: {
+  slug: string; title: string; description: string
+  rules: string; iconUrl?: string; modPubkeys: string[]
+}) {
+  return finalizeEvent({
+    kind: 34550,
+    created_at: now(),
+    tags: [
+      ['d', draft.slug],
+      ['name', draft.title],
+      ['description', draft.description],
+      ['rules', draft.rules],
+      ...(draft.iconUrl ? [['image', draft.iconUrl]] : []),
+      ...draft.modPubkeys.map(pk => ['p', pk, '', 'moderator']),
+      ['agora:default_sort', 'collaborative'],
+      ['agora:allow_anonymous', 'true'],
+    ],
+    content: '',
+  }, getKey())
+}
+
+// ─── Thread ───────────────────────────────────────────────────────
+export function buildThreadEvent(draft: {
+  title: string; body: string
+  communityNaddr: string
+  threadType?: string; linkUrl?: string; tags?: string[]
+  mediaUrl?: string; mediaMime?: string
+}) {
+  return finalizeEvent({
+    kind: 1,
+    created_at: now(),
+    tags: [
+      ['a', draft.communityNaddr],
+      ['subject', draft.title],
+      ['agora:thread_type', draft.threadType ?? 'discussion'],
+      ...(draft.linkUrl ? [['r', draft.linkUrl]] : []),
+      ...(draft.tags ?? []).map(t => ['t', t]),
+      ...(draft.mediaUrl ? [
+        ['url', draft.mediaUrl],
+        ['m', draft.mediaMime ?? 'image/jpeg'],
+      ] : []),
+    ],
+    content: draft.body,
+  }, getKey())
+}
+
+// ─── Reply ────────────────────────────────────────────────────────
+export function buildReplyEvent(draft: {
+  body: string; rootId: string; parentId: string
+  parentPubkey: string; communityNaddr: string
+}) {
+  return finalizeEvent({
+    kind: 1,
+    created_at: now(),
+    tags: [
+      ['e', draft.rootId, '', 'root'],
+      ['e', draft.parentId, '', 'reply'],
+      ['p', draft.parentPubkey],
+      ['a', draft.communityNaddr],
+    ],
+    content: draft.body,
+  }, getKey())
+}
+
+// ─── Vote ─────────────────────────────────────────────────────────
+export function buildVoteEvent(
+  targetId: string, targetPubkey: string, voteType: VoteType
+) {
+  return finalizeEvent({
+    kind: 7,
+    created_at: now(),
+    tags: [['e', targetId], ['p', targetPubkey]],
+    content: VOTE_CONTENT[voteType],
+  }, getKey())
+}
+
+// ─── Mod Action ───────────────────────────────────────────────────
+export function buildModActionEvent(
+  communityNaddr: string, targetId: string, action: string, reason: string
+) {
+  return finalizeEvent({
+    kind: 9000,
+    created_at: now(),
+    tags: [
+      ['a', communityNaddr],
+      ['e', targetId],
+      ['agora:action', action],
+    ],
+    content: reason,
+  }, getKey())
+}
+
+// ─── Profile ──────────────────────────────────────────────────────
+export function buildProfileEvent(profile: {
+  name: string; about?: string; picture?: string; website?: string
+}) {
+  return finalizeEvent({
+    kind: 0,
+    created_at: now(),
+    tags: [],
+    content: JSON.stringify(profile),
+  }, getKey())
+}
+```
+
+### 6.5 NIP-10 Thread Tree
+
+```typescript
+// src/lib/nostr/threading.ts
+import type { Event as NostrEvent } from 'nostr-tools'
+
+export interface TreeNode {
+  event: NostrEvent
+  children: TreeNode[]
+  depth: number
+}
+
+export function buildTree(root: NostrEvent, replies: NostrEvent[]): TreeNode[] {
+  const map = new Map<string, TreeNode>()
+
+  for (const e of replies) {
+    map.set(e.id, { event: e, children: [], depth: 0 })
+  }
+
+  const roots: TreeNode[] = []
+
+  for (const e of replies) {
+    const node = map.get(e.id)!
+    // NIP-10: find reply marker, fallback to last e tag
+    const eTags = e.tags.filter(t => t[0] === 'e')
+    const replyTag = eTags.find(t => t[3] === 'reply') ?? eTags.find(t => t[3] !== 'root')
+    const parentId = replyTag?.[1]
+
+    if (parentId === root.id || !parentId) {
+      roots.push(node)
+    } else if (map.has(parentId)) {
+      const parent = map.get(parentId)!
+      node.depth = parent.depth + 1
+      parent.children.push(node)
+    } else {
+      roots.push(node)  // orphan → show at root
+    }
+  }
+
+  return roots
+}
+```
+
+---
+
+## 7. MEDIA LAYER (NIP-96 PRIMARY)
+
+### 7.1 What NIP-96 Is
+
+NIP-96 defines a standard HTTP API for file hosting servers that Nostr clients can use. Multiple free servers implement it. Upload a file, get back a URL. No account. No API key. Works on mobile.
+
+```
+POST https://nostr.build/api/v2/nip96/upload
+  Body: multipart/form-data with the file
+  Auth: Nostr event signature (proves ownership of pubkey)
+Response: { url, sha256, ... }
+```
+
+### 7.2 NIP-96 Client
+
+```typescript
+// src/lib/media/nip96.ts
+import { finalizeEvent } from 'nostr-tools'
+import { activePersona } from '$lib/stores/auth'
+import { get } from 'svelte/store'
+
+export interface Nip96Server {
+  name: string
+  apiUrl: string
+  downloadUrl: string
+  maxFileSizeMb: number
+  freeStorage: string
+}
+
+// Always-free NIP-96 servers, pre-configured
+// User never needs to configure these — we try them in order
+export const NIP96_SERVERS: Nip96Server[] = [
+  {
+    name: 'nostr.build',
+    apiUrl: 'https://nostr.build/api/v2/nip96/upload',
+    downloadUrl: 'https://nostr.build',
+    maxFileSizeMb: 25,
+    freeStorage: 'Unlimited (fair use)',
+  },
+  {
+    name: 'void.cat',
+    apiUrl: 'https://void.cat/upload',
+    downloadUrl: 'https://void.cat',
+    maxFileSizeMb: 100,
+    freeStorage: 'Free tier',
+  },
+  {
+    name: 'nostrcheck.me',
+    apiUrl: 'https://nostrcheck.me/api/v2/media',
+    downloadUrl: 'https://nostrcheck.me',
+    maxFileSizeMb: 25,
+    freeStorage: 'Free',
+  },
+]
+
+export interface UploadResult {
+  url: string
+  sha256: string
+  mimeType: string
+  originalSize: number
+  dimensions?: { width: number; height: number }
+  serverName: string
+}
+
+// ─── Main Upload Function ─────────────────────────────────────────
+
+export async function uploadMedia(
+  file: File,
+  onProgress?: (pct: number) => void
+): Promise<UploadResult> {
+  const persona = get(activePersona)
+  if (!persona) throw new Error('Must be logged in to upload')
+
+  // Step 1: Strip EXIF from images
+  const processedFile = file.type.startsWith('image/')
+    ? await stripExif(file)
+    : file
+
+  // Step 2: Try each server in order
+  for (const server of NIP96_SERVERS) {
+    try {
+      const result = await uploadToServer(processedFile, server, persona.keypair.secretKey, onProgress)
+      return result
+    } catch (err) {
+      console.warn(`[NIP-96] ${server.name} failed:`, err)
+      // Try next server
+    }
+  }
+
+  throw new Error('All media servers failed. Check your connection.')
+}
+
+async function uploadToServer(
+  file: File,
+  server: Nip96Server,
+  secretKey: Uint8Array,
+  onProgress?: (pct: number) => void
+): Promise<UploadResult> {
+
+  // NIP-96 auth: sign a special authorization event
+  const authEvent = finalizeEvent({
+    kind: 27235,  // NIP-98 HTTP Auth
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [
+      ['u', server.apiUrl],
+      ['method', 'POST'],
+    ],
+    content: '',
+  }, secretKey)
+
+  const authHeader = `Nostr ${btoa(JSON.stringify(authEvent))}`
+
+  const form = new FormData()
+  form.append('file[]', file)
+
+  // Use XMLHttpRequest for progress tracking
+  const result = await new Promise<UploadResult>((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', server.apiUrl)
+    xhr.setRequestHeader('Authorization', authHeader)
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress?.(Math.round(e.loaded / e.total * 100))
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          // nostr.build response format
+          const fileData = data.nip94_event?.tags ?? []
+          const url = fileData.find((t: string[]) => t[0] === 'url')?.[1]
+            ?? data.url ?? data.data?.links?.web
+          const sha256 = fileData.find((t: string[]) => t[0] === 'x')?.[1]
+          if (!url) throw new Error('No URL in response')
+          resolve({
+            url,
+            sha256: sha256 ?? '',
+            mimeType: file.type,
+            originalSize: file.size,
+            serverName: server.name,
+          })
+        } catch (e) { reject(e) }
+      } else {
+        reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`))
+      }
+    }
+    xhr.onerror = () => reject(new Error('Network error'))
+    xhr.send(form)
+  })
+
+  return result
+}
+
+// ─── EXIF Stripping ───────────────────────────────────────────────
+// Re-encode via OffscreenCanvas to strip all metadata
+
+async function stripExif(file: File): Promise<File> {
+  const bitmap = await createImageBitmap(file)
+  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height)
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(bitmap, 0, 0)
+  const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.88 })
+  return new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' })
+}
+```
+
+### 7.3 Optional IPFS Enhancement
+
+```typescript
+// src/lib/media/ipfs.ts
+// ONLY loaded if user explicitly enables IPFS in settings.
+// Uses dynamic import to keep bundle size down.
+
+export async function uploadToIPFS(file: File): Promise<{ cid: string; url: string }> {
+  // Dynamic import — Helia only loads if IPFS is enabled
+  const { getHeliaNode } = await import('./helia')
+  const { encryptForIPFS } = await import('./encrypt')
+
+  const { fs } = await getHeliaNode()
+
+  // Always encrypt before IPFS (IPFS is public)
+  const encrypted = await encryptForIPFS(file)
+  const cid = await fs.addBytes(encrypted.data)
+  const cidStr = cid.toString()
+
+  // Try to pin (optional, non-fatal)
+  tryPin(cidStr, encrypted.data)
+
+  return {
+    cid: cidStr,
+    url: `https://ipfs.io/ipfs/${cidStr}`,
+  }
+}
+
+async function tryPin(cid: string, data: Uint8Array): Promise<void> {
+  // Try web3.storage if user has configured a token
+  const token = localStorage.getItem('agora:web3storage:token')
+  if (!token) return
+  try {
+    await fetch('https://api.web3.storage/upload', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: data,
+    })
+  } catch { /* pinning is best-effort */ }
+}
+```
+
+### 7.4 Media Store (Unified Interface)
+
+```typescript
+// src/lib/media/index.ts
+// Single interface regardless of whether NIP-96 or IPFS is used
+
+import { uploadMedia as nip96Upload } from './nip96'
+import { preferences } from '$lib/stores/preferences'
+import { get } from 'svelte/store'
+
+export async function upload(
+  file: File,
+  onProgress?: (pct: number) => void
+): Promise<{ url: string; cid?: string; sha256?: string }> {
+  const prefs = get(preferences)
+
+  if (prefs.useIPFS) {
+    // Power user mode: IPFS with encryption
+    const { uploadToIPFS } = await import('./ipfs')
+    const result = await uploadToIPFS(file)
+    return result
+  }
+
+  // Default: NIP-96 (simple, just works)
+  const result = await nip96Upload(file, onProgress)
+  return { url: result.url, sha256: result.sha256 }
+}
+```
+
+---
+
+## 8. PRIVACY LAYER
+
+### 8.1 Honest Privacy Model
+
+```
+WHAT WE PROTECT:
+  ✅ Local data (AES-GCM encrypted with password-derived key)
+  ✅ Private messages (NIP-44 + NIP-59 gift wrap)
+  ✅ Image metadata (EXIF stripped before upload)
+  ✅ Multiple personas are unlinkable (different keypairs)
+  ✅ Password never stored — re-derived on login
+  ✅ No tracking, no analytics, no fingerprinting by us
+
+WHAT WE DO NOT PROTECT (AND WHY):
+  ❌ Your IP from relay operators
+      → We use TLS WebSockets. Relay sees your IP.
+      → This is the same as any website. Accept it or use Tor.
+      → We recommend Tor Browser for sensitive use cases.
+
+  ❌ Your IP from NIP-96 media servers
+      → File uploads go to nostr.build etc. over HTTPS.
+      → Same situation as uploading to Imgur.
+
+  ❌ Public posts are public
+      → Forum posts on public relays are readable by anyone.
+      → This is by design. It's a forum.
+
+  ❌ Stylometric fingerprinting
+      → Your writing style can identify you across personas.
+      → No technical solution exists.
+
+  ❌ Browser fingerprinting across sessions
+      → Without Tor Browser, browser fingerprints are linkable.
+      → Use Tor Browser or Firefox with privacy extensions
+        if this matters to you.
+
+WE RECOMMEND FOR SENSITIVE USE:
+  → Tor Browser (completely separate browser fingerprint,
+    routes all traffic through Tor including WebSockets)
+  → We support Tor. We don't require it.
+```
+
+### 8.2 Encrypted Local Storage
+
+```typescript
+// src/lib/crypto/storage.ts
+// All Agora data in localStorage/IndexedDB is encrypted at rest.
+// Encryption key derived from user's login password.
+// If someone gets the device, they get ciphertext.
+
+const SALT_KEY = 'agora:storage:salt'
+
+function getSalt(): Uint8Array {
+  const stored = localStorage.getItem(SALT_KEY)
+  if (stored) return new Uint8Array(JSON.parse(stored))
+  const salt = crypto.getRandomValues(new Uint8Array(32))
+  localStorage.setItem(SALT_KEY, JSON.stringify(Array.from(salt)))
+  return salt
+}
+
+export class EncryptedStore {
+  private key: CryptoKey | null = null
+
+  async init(password: string): Promise<void> {
+    const salt = getSalt()
+    const base = await crypto.subtle.importKey(
+      'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']
+    )
+    this.key = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: 250_000, hash: 'SHA-256' },
+      base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+    )
+  }
+
+  async set(k: string, v: unknown): Promise<void> {
+    if (!this.key) throw new Error('Store not initialized')
+    const iv = crypto.getRandomValues(new Uint8Array(12))
+    const ct = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv }, this.key,
+      new TextEncoder().encode(JSON.stringify(v))
+    )
+    const out = new Uint8Array(12 + ct.byteLength)
+    out.set(iv)
+    out.set(new Uint8Array(ct), 12)
+    localStorage.setItem(`agora:${k}`, btoa(String.fromCharCode(...out)))
+  }
+
+  async get<T>(k: string): Promise<T | null> {
+    if (!this.key) throw new Error('Store not initialized')
+    const raw = localStorage.getItem(`agora:${k}`)
+    if (!raw) return null
+    const bytes = Uint8Array.from(atob(raw), c => c.charCodeAt(0))
+    const pt = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: bytes.slice(0, 12) }, this.key, bytes.slice(12)
+    )
+    return JSON.parse(new TextDecoder().decode(pt))
+  }
+
+  async clear(): Promise<void> {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('agora:') && k !== SALT_KEY)
+      .forEach(k => localStorage.removeItem(k))
+  }
+}
+
+export const encryptedStore = new EncryptedStore()
+```
+
+### 8.3 Private Messaging (NIP-44 + NIP-59)
+
+```typescript
+// src/lib/nostr/dms.ts
+// Direct messages use NIP-44 encryption (XChaCha20-Poly1305)
+// wrapped in NIP-59 Gift Wrap (hides sender and recipient from relay)
+
+import { nip44, nip59, finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools'
+import { activePersona } from '$lib/stores/auth'
+import { get } from 'svelte/store'
+
+export async function sendPrivateMessage(
+  recipientPubkey: string,
+  message: string
+): Promise<object> {
+  const persona = get(activePersona)
+  if (!persona) throw new Error('Not logged in')
+
+  const sk = persona.keypair.secretKey
+  const pk = persona.keypair.publicKey
+
+  // Inner event: the actual DM (kind:14, NIP-17)
+  const dm = finalizeEvent({
+    kind: 14,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [['p', recipientPubkey]],
+    content: nip44.encrypt(message, nip44.getConversationKey(sk, recipientPubkey)),
+  }, sk)
+
+  // Outer gift wrap (kind:1059, NIP-59)
+  // Uses a random ephemeral key — hides who sent the DM
+  const wrapperSk = generateSecretKey()
+  const wrapped = finalizeEvent({
+    kind: 1059,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [['p', recipientPubkey]],
+    content: nip44.encrypt(JSON.stringify(dm), nip44.getConversationKey(wrapperSk, recipientPubkey)),
+  }, wrapperSk)
+
+  return wrapped
+}
+
+export function decryptMessage(
+  giftWrap: any,
+  ourSecretKey: Uint8Array
+): string | null {
+  try {
+    const ck = nip44.getConversationKey(ourSecretKey, giftWrap.pubkey)
+    const inner = JSON.parse(nip44.decrypt(giftWrap.content, ck))
+    const ourPk = getPublicKey(ourSecretKey)
+    const dmCk = nip44.getConversationKey(ourSecretKey, inner.pubkey === ourPk ? giftWrap.tags.find((t: string[]) => t[0] === 'p')?.[1] : inner.pubkey)
+    return nip44.decrypt(inner.content, dmCk)
+  } catch {
+    return null
+  }
+}
+```
+
+### 8.4 Panic Wipe
+
+```typescript
+// src/lib/crypto/emergency.ts
+export async function panicWipe(): Promise<void> {
+  // Overwrite then delete
+  Object.keys(localStorage)
+    .filter(k => k.startsWith('agora:'))
+    .forEach(k => {
+      localStorage.setItem(k, 'x'.repeat(64))
+      localStorage.removeItem(k)
+    })
+
+  // Wipe IndexedDB
+  const dbs = await indexedDB.databases?.() ?? []
+  await Promise.all(
+    dbs.filter(d => d.name?.startsWith('agora'))
+       .map(d => new Promise<void>((res, rej) => {
+         const r = indexedDB.deleteDatabase(d.name!)
+         r.onsuccess = () => res()
+         r.onerror = () => rej(r.error)
+       }))
+  )
+  sessionStorage.clear()
+  window.location.replace('about:blank')
+}
+
+export function registerPanicShortcut(): void {
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'X') {
+      if (confirm('Erase all local Agora data?')) panicWipe()
+    }
+  })
+}
+```
+
+---
+
+## 9. COLLABORATIVE ALGORITHM
+
+### 9.1 Scoring
+
+```typescript
+// src/lib/algorithm/scoring.ts
+import type { Event as NostrEvent } from 'nostr-tools'
+import { VOTE_CONTENT } from '$lib/nostr/kinds'
+
+export interface Weights {
+  contentLength:   number
+  replyDiversity:  number
+  voteQuality:     number
+  discussionDepth: number
+  timeDecay:       number
+}
+
+export const DEFAULT_WEIGHTS: Weights = {
+  contentLength:   0.15,
+  replyDiversity:  0.25,
+  voteQuality:     0.35,
+  discussionDepth: 0.15,
+  timeDecay:       0.10,
+}
+
+export interface ScoreResult {
+  total: number
+  breakdown: Record<string, number>
+  weights: Weights
+}
+
+export function scoreEvent(
+  event: NostrEvent,
+  replies: NostrEvent[],
+  reactions: NostrEvent[],
+  weights = DEFAULT_WEIGHTS
+): ScoreResult {
+  const len = event.content.length
+  const contentLength =
+    len < 50 ? 0.2 : len < 200 ? 0.5 : len < 1000 ? 1.0 : len < 3000 ? 0.8 : 0.6
+
+  const uniqueRepliers = new Set(replies.map(r => r.pubkey)).size
+  const replyDiversity = replies.length === 0 ? 0
+    : Math.min(1, uniqueRepliers / replies.length)
+
+  const mine = reactions.filter(r => r.tags.some(t => t[0] === 'e' && t[1] === event.id))
+  const ins  = mine.filter(r => r.content === VOTE_CONTENT.insightful).length
+  const con  = mine.filter(r => r.content === VOTE_CONTENT.constructive).length
+  const bri  = mine.filter(r => r.content === VOTE_CONTENT.bridge).length
+  const up   = mine.filter(r => r.content === VOTE_CONTENT.upvote).length
+  const dn   = mine.filter(r => r.content === VOTE_CONTENT.downvote).length
+  const voteQuality = mine.length === 0 ? 0
+    : Math.min(1, (ins * 3 + con * 2 + bri * 4 + up) / (mine.length + dn + 1))
+
+  const discussionDepth = Math.min(1, replies.length / 10)
+
+  const ageHours = (Date.now() / 1000 - event.created_at) / 3600
+  const timeDecay = 1 / (1 + Math.log1p(ageHours / 6))
+
+  const breakdown = { contentLength, replyDiversity, voteQuality, discussionDepth, timeDecay }
+  const total = Object.entries(breakdown).reduce(
+    (sum, [k, v]) => sum + (weights[k as keyof Weights] ?? 0) * v, 0
+  )
+
+  return { total: Math.round(total * 10_000) / 10_000, breakdown, weights }
+}
+```
+
+### 9.2 Sort Strategies
+
+```typescript
+// src/lib/algorithm/sorting.ts
+import type { Event as NostrEvent } from 'nostr-tools'
+import { scoreEvent, DEFAULT_WEIGHTS, type Weights } from './scoring'
+
+export type SortStrategy = 'collaborative' | 'newest' | 'oldest' | 'most_discussed' | 'high_signal'
+
+export function sortEvents(
+  events: NostrEvent[],
+  repliesByEvent: Map<string, NostrEvent[]>,
+  reactions: NostrEvent[],
+  strategy: SortStrategy,
+  communityWeights?: Partial<Weights>
+): NostrEvent[] {
+  const w = { ...DEFAULT_WEIGHTS, ...communityWeights }
+
+  if (strategy === 'newest') return [...events].sort((a, b) => b.created_at - a.created_at)
+  if (strategy === 'oldest') return [...events].sort((a, b) => a.created_at - b.created_at)
+  if (strategy === 'most_discussed')
+    return [...events].sort((a, b) =>
+      (repliesByEvent.get(b.id)?.length ?? 0) - (repliesByEvent.get(a.id)?.length ?? 0)
+    )
+
+  const scored = events.map(e => ({
+    event: e,
+    score: scoreEvent(e, repliesByEvent.get(e.id) ?? [], reactions, w),
+  }))
+
+  if (strategy === 'high_signal')
+    return scored.sort((a, b) => b.score.breakdown.voteQuality - a.score.breakdown.voteQuality)
+                 .map(s => s.event)
+
+  // 'collaborative'
+  return scored.sort((a, b) => b.score.total - a.score.total).map(s => s.event)
+}
+```
+
+---
+
+## 10. ACTIVITYPUB BRIDGE (Lemmy Read)
+
+```typescript
+// src/lib/activitypub/lemmy.ts
+// Read-only bridge to Lemmy communities. No account needed.
+// Uses Lemmy's public HTTP API — no ActivityPub parsing required.
+
+export interface LemmyCommunity {
+  id: number; name: string; title: string
+  description: string; instanceUrl: string
+  subscribers: number; posts: number
+}
+
+export interface AgoraThread {
+  id: string; title: string; body: string
+  url?: string; authorName: string
+  upvotes: number; downvotes: number
+  replyCount: number; createdAt: number
+  source: 'nostr' | 'lemmy'
+  sourceUrl?: string
+}
+
+export async function fetchLemmyCommunity(
+  instanceUrl: string, communityName: string
+): Promise<LemmyCommunity | null> {
+  try {
+    const r = await fetch(
+      `${instanceUrl}/api/v3/community?name=${communityName}`,
+      { signal: AbortSignal.timeout(8000) }
+    )
+    if (!r.ok) return null
+    const { community_view: cv } = await r.json()
+    return {
+      id: cv.community.id,
+      name: cv.community.name,
+      title: cv.community.title,
+      description: cv.community.description ?? '',
+      instanceUrl,
+      subscribers: cv.counts.subscribers,
+      posts: cv.counts.posts,
+    }
+  } catch { return null }
+}
+
+export async function fetchLemmyPosts(
+  instanceUrl: string, communityId: number,
+  sort = 'Active', page = 1
+): Promise<AgoraThread[]> {
+  try {
+    const r = await fetch(
+      `${instanceUrl}/api/v3/post/list?community_id=${communityId}&sort=${sort}&page=${page}&limit=25`,
+      { signal: AbortSignal.timeout(8000) }
+    )
+    if (!r.ok) return []
+    const { posts } = await r.json()
+    return posts.map((pv: any) => ({
+      id: `lemmy:${pv.post.ap_id}`,
+      title: pv.post.name,
+      body: pv.post.body ?? '',
+      url: pv.post.url,
+      authorName: pv.creator.name,
+      upvotes: pv.counts.upvotes,
+      downvotes: pv.counts.downvotes,
+      replyCount: pv.counts.comments,
+      createdAt: new Date(pv.post.published).getTime() / 1000,
+      source: 'lemmy',
+      sourceUrl: pv.post.ap_id,
+    }))
+  } catch { return [] }
+}
+```
+
+---
+
+## 11. SEARCH
+
+```typescript
+// src/lib/search/index.ts
+// Primary: nostr.band API (free, no key, NIP-50 compliant)
+// Fallback: client-side filter of cached events
+
+export interface SearchResult {
+  events: any[]
+  source: 'relay' | 'cache'
+}
+
+export async function search(
+  query: string,
+  options: { kind?: number; communityId?: string; limit?: number } = {}
+): Promise<SearchResult> {
+  const { kind = 1, limit = 50 } = options
+
+  // Try nostr.band API first (fastest, most comprehensive)
+  try {
+    const filter: Record<string, unknown> = { kinds: [kind], search: query, limit }
+    if (options.communityId) filter['#a'] = [options.communityId]
+
+    const { subscribe } = await import('$lib/nostr/client')
+    const events: any[] = []
+
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(resolve, 5000)
+      const sub = subscribe(
+        [filter],
+        (e) => events.push(e),
+        () => { clearTimeout(timeout); resolve() }
+      )
+    })
+
+    if (events.length > 0) return { events, source: 'relay' }
+  } catch { /* fall through */ }
+
+  // Fallback: search local IndexedDB cache
+  const { searchCache } = await import('$lib/cache/idb')
+  const cached = await searchCache(query, kind)
+  return { events: cached, source: 'cache' }
+}
+```
+
+---
+
+## 12. REPOSITORY STRUCTURE
+
+```
+agora/
+├── PRINCIPLES.md
+├── README.md
+├── LICENSE
+├── SECURITY.md
+├── package.json
+├── package-lock.json
+├── svelte.config.js
+├── vite.config.ts
+├── tailwind.config.js
+├── tsconfig.json
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       └── deploy.yml
+├── docs/
+│   ├── architecture.md
+│   ├── privacy-model.md
+│   ├── algorithm.md
+│   └── media-servers.md
+├── src/
+│   ├── app.html              (zero external resources)
+│   ├── app.css               (design tokens + Tailwind)
+│   ├── hooks.client.ts       (init: relay pool, panic shortcut)
+│   ├── lib/
+│   │   ├── nostr/
+│   │   │   ├── client.ts     (relay pool)
+│   │   │   ├── relays.ts     (default + user relays)
+│   │   │   ├── events.ts     (build + sign all event types)
+│   │   │   ├── threading.ts  (NIP-10 tree builder)
+│   │   │   ├── nip07.ts      (browser extension)
+│   │   │   ├── dms.ts        (NIP-44 + NIP-59)
+│   │   │   └── kinds.ts      (all kind constants + vote types)
+│   │   ├── media/
+│   │   │   ├── index.ts      (unified upload interface)
+│   │   │   ├── nip96.ts      (primary: nostr.build + fallbacks)
+│   │   │   ├── ipfs.ts       (optional: Helia, lazy-loaded)
+│   │   │   └── helia.ts      (IPFS node, only loaded if enabled)
+│   │   ├── crypto/
+│   │   │   ├── derive.ts     (password → keypair)
+│   │   │   ├── storage.ts    (encrypted localStorage)
+│   │   │   └── emergency.ts  (panic wipe)
+│   │   ├── algorithm/
+│   │   │   ├── scoring.ts
+│   │   │   └── sorting.ts
+│   │   ├── activitypub/
+│   │   │   └── lemmy.ts      (read bridge)
+│   │   ├── search/
+│   │   │   └── index.ts
+│   │   ├── stores/
+│   │   │   ├── auth.ts       (personas, active persona)
+│   │   │   ├── relays.ts     (relay connections)
+│   │   │   ├── communities.ts
+│   │   │   ├── threads.ts
+│   │   │   ├── notifications.ts
+│   │   │   └── preferences.ts
+│   │   ├── cache/
+│   │   │   └── idb.ts        (IndexedDB event cache)
+│   │   ├── components/
+│   │   │   ├── layout/
+│   │   │   │   ├── Header.svelte
+│   │   │   │   ├── Sidebar.svelte
+│   │   │   │   ├── Footer.svelte
+│   │   │   │   └── RelayStatus.svelte
+│   │   │   ├── onboarding/
+│   │   │   │   ├── Welcome.svelte
+│   │   │   │   ├── CreateAccount.svelte
+│   │   │   │   ├── ImportKey.svelte
+│   │   │   │   └── ChooseCommunities.svelte
+│   │   │   ├── community/
+│   │   │   │   ├── CommunityCard.svelte
+│   │   │   │   ├── CommunityHeader.svelte
+│   │   │   │   ├── CommunityRules.svelte
+│   │   │   │   └── CommunityHealth.svelte
+│   │   │   ├── thread/
+│   │   │   │   ├── ThreadList.svelte
+│   │   │   │   ├── ThreadCard.svelte
+│   │   │   │   ├── ThreadComposer.svelte
+│   │   │   │   └── SortControls.svelte
+│   │   │   ├── post/
+│   │   │   │   ├── PostCard.svelte
+│   │   │   │   ├── PostEditor.svelte
+│   │   │   │   ├── PostTree.svelte
+│   │   │   │   └── PostActions.svelte
+│   │   │   ├── identity/
+│   │   │   │   ├── PersonaSwitcher.svelte
+│   │   │   │   ├── PersonaBadge.svelte
+│   │   │   │   └── AccountMenu.svelte
+│   │   │   ├── voting/
+│   │   │   │   ├── VoteButtons.svelte
+│   │   │   │   └── ScoreExplainer.svelte
+│   │   │   ├── media/
+│   │   │   │   ├── MediaUploader.svelte
+│   │   │   │   └── MediaDisplay.svelte
+│   │   │   ├── moderation/
+│   │   │   │   ├── ReportDialog.svelte
+│   │   │   │   ├── ModQueue.svelte
+│   │   │   │   └── ModLog.svelte
+│   │   │   └── common/
+│   │   │       ├── Pagination.svelte
+│   │   │       ├── Markdown.svelte
+│   │   │       ├── Toast.svelte
+│   │   │       ├── Modal.svelte
+│   │   │       ├── TimeAgo.svelte
+│   │   │       ├── ExternalLinkWarning.svelte
+│   │   │       ├── ScoreExplainer.svelte
+│   │   │       ├── EmptyState.svelte
+│   │   │       └── AccessibilityAnnouncer.svelte
+│   │   └── utils/
+│   │       ├── markdown.ts   (marked + DOMPurify, block ext. images)
+│   │       ├── dates.ts
+│   │       └── nip19.ts      (encode/decode identifiers)
+│   ├── routes/
+│   │   ├── +layout.svelte
+│   │   ├── +layout.ts
+│   │   ├── +page.svelte      (home feed)
+│   │   ├── +page.ts
+│   │   ├── +error.svelte
+│   │   ├── onboarding/+page.svelte
+│   │   ├── c/[communityId]/
+│   │   │   ├── +page.svelte
+│   │   │   ├── +page.ts
+│   │   │   ├── new/+page.svelte
+│   │   │   ├── settings/+page.svelte
+│   │   │   └── modlog/+page.svelte
+│   │   ├── t/[eventId]/
+│   │   │   ├── +page.svelte
+│   │   │   └── +page.ts
+│   │   ├── p/[npub]/+page.svelte
+│   │   ├── search/+page.svelte
+│   │   ├── explore/+page.svelte
+│   │   ├── notifications/+page.svelte
+│   │   └── settings/
+│   │       ├── +page.svelte
+│   │       ├── account/+page.svelte
+│   │       ├── identity/+page.svelte
+│   │       ├── relays/+page.svelte
+│   │       ├── privacy/+page.svelte
+│   │       ├── display/+page.svelte
+│   │       ├── algorithm/+page.svelte
+│   │       └── data/+page.svelte
+│   └── static/
+│       ├── favicon.svg
+│       └── manifest.json
+└── tests/
+    ├── unit/
+    │   ├── derive.test.ts
+    │   ├── scoring.test.ts
+    │   ├── threading.test.ts
+    │   ├── storage.test.ts
+    │   └── nip96.test.ts
+    └── e2e/
+        ├── onboarding.spec.ts
+        ├── community.spec.ts
+        ├── posting.spec.ts
+        ├── voting.spec.ts
+        ├── upload.spec.ts
+        └── identity.spec.ts
+```
+
+---
+
+## 13. FRONTEND SPECIFICATION
+
+### 13.1 Design System
+
+```css
+/* src/app.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, monospace;
+
+  --bg-1: #ffffff; --bg-2: #f8f9fa; --bg-3: #e9ecef;
+  --text-1: #212529; --text-2: #495057; --text-3: #adb5bd;
+  --accent: #4263eb; --accent-h: #364fc7;
+  --success: #2f9e44; --warning: #e67700; --danger: #e03131;
+  --border: #dee2e6;
+  --r: 8px;
+
+  --id-primary:   #4263eb;
+  --id-pseudonym: #7048e8;
+  --id-ephemeral: #868e96;
+}
+[data-theme="dark"] {
+  --bg-1: #1a1b1e; --bg-2: #25262b; --bg-3: #2c2e33;
+  --text-1: #c1c2c5; --text-2: #909296; --text-3: #5c5f66;
+  --border: #373a40;
+}
+```
+
+### 13.2 Pages
+
+| Route | Purpose | Key Behavior |
+|---|---|---|
+| `/` | Home feed | Threads from subscribed communities, collaborative sort, pagination |
+| `/onboarding` | First-time setup | Username+password → keypair, NIP-07 option, pick communities |
+| `/c/[id]` | Community | Thread list, sort controls, health metrics, join button |
+| `/c/[id]/new` | Compose thread | Markdown, media upload (NIP-96), persona selector |
+| `/c/[id]/modlog` | Mod log | Public `kind:9000` events, paginated |
+| `/c/[id]/settings` | Community admin | Rules, weights, moderators (mod-only) |
+| `/t/[id]` | Thread + replies | NIP-10 tree, semantic votes, score explainer |
+| `/p/[npub]` | Profile | Bio, post history, no follower counts |
+| `/search` | Search | nostr.band API + local fallback |
+| `/explore` | Discover | Nostr communities + Lemmy bridge |
+| `/notifications` | Notifications | Replies + mentions, dot indicator only |
+| `/settings/*` | All settings | Tabbed: account, identity, relays, privacy, display, algorithm, data |
+
+### 13.3 Anti-Dark-Pattern Rules
+
+```
+MANDATORY — no exceptions:
+  □ Pagination only. No infinite scroll.
+  □ Notification indicator = dot, never a count.
+  □ Vote scores hidden by default (toggle in display settings).
+  □ Compose area shows "Posting as [Name] ([type])".
+  □ External link warning before navigating away.
+  □ No autoplay of any media.
+  □ No "suggested users" or "you might like" anywhere.
+  □ No follower/following counts displayed.
+  □ Media is click-to-load (not auto-fetched).
+  □ Score explainer "?" on every ranked item.
+```
+
+### 13.4 Onboarding Flow
+
+```
+Step 1: Welcome
+  "Agora is a decentralized forum. Your account is
+   a username and password — no email required."
+  → [Create Account] [I have a key already] [Browse without account]
+
+Step 2a: Create Account
+  Username: [____________]
+  Password: [____________]  (repeat to confirm)
+  ⚠️  "Your password cannot be recovered. If you forget it,
+       you will lose access to your account."
+  → [Create Account]
+  Derives keypair client-side. Shows npub. Saves encrypted to localStorage.
+
+Step 2b: Import Key (power users)
+  "Paste your nsec or use a browser extension"
+  → [nsec text field] or [Use NIP-07 Extension] (shown if detected)
+
+Step 3: Pick Communities
+  Grid of featured communities to join.
+  Search for more. Or skip.
+
+Step 4: Done.
+  "You're in. Here's your feed."
+```
+
+### 13.5 Markdown Rendering
+
+```typescript
+// src/lib/utils/markdown.ts
+// External images BLOCKED (would leak IP to image server).
+// External links get warning dialog.
+// Everything else renders normally.
+
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
+
+const renderer = new marked.Renderer()
+
+renderer.image = (href, _title, text) => {
+  // Block external images — render as text link instead
+  if (href.startsWith('http') && !href.includes(location.hostname)) {
+    return `<span class="blocked-image" title="External image blocked">🖼️ ${text || href}</span>`
+  }
+  return `<img src="${href}" alt="${text}" loading="lazy" />`
+}
+
+renderer.link = (href, _title, text) => {
+  const isExternal = href.startsWith('http') && !href.includes(location.hostname)
+  if (isExternal) {
+    return `<a href="${href}" class="external-link" data-external="true"
+              rel="noopener noreferrer">${text}</a>`
+  }
+  return `<a href="${href}">${text}</a>`
+}
+
+export function renderMarkdown(md: string): string {
+  const html = marked(md, { renderer, breaks: true })
+  return DOMPurify.sanitize(html as string, {
+    ALLOWED_TAGS: ['p','br','strong','em','code','pre','blockquote',
+                   'ul','ol','li','h2','h3','h4','a','img','span','hr'],
+    ALLOWED_ATTR: ['href','src','alt','class','title','data-external'],
+    ALLOW_DATA_ATTR: false,
+  })
+}
+```
+
+---
+
+## 14. PACKAGE.JSON
+
+```json
+{
+  "name": "agora",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev":       "vite dev",
+    "build":     "vite build",
+    "preview":   "vite preview",
+    "check":     "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "lint":      "eslint . && prettier --check .",
+    "format":    "prettier --write .",
+    "test":      "vitest run",
+    "test:watch":"vitest",
+    "test:e2e":  "playwright test",
+    "audit":     "npm audit --audit-level=moderate"
+  },
+  "dependencies": {
+    "nostr-tools":         "^2.0.0",
+    "@noble/curves":       "^1.0.0",
+    "@noble/hashes":       "^1.0.0",
+    "marked":              "^9.0.0",
+    "dompurify":           "^3.0.0",
+    "idb":                 "^7.0.0"
+  },
+  "optionalDependencies": {
+    "helia":               "^4.0.0",
+    "@helia/unixfs":       "^3.0.0",
+    "@libp2p/websockets":  "^8.0.0",
+    "@libp2p/webrtc":      "^4.0.0",
+    "@chainsafe/libp2p-noise": "^15.0.0",
+    "@chainsafe/libp2p-yamux": "^6.0.0",
+    "@libp2p/bootstrap":   "^10.0.0",
+    "blockstore-idb":      "^1.0.0",
+    "datastore-idb":       "^1.0.0",
+    "multiformats":        "^13.0.0"
+  },
+  "devDependencies": {
+    "@sveltejs/kit":            "^2.0.0",
+    "@sveltejs/adapter-static": "^3.0.0",
+    "svelte":                   "^4.0.0",
+    "svelte-check":             "^3.0.0",
+    "tailwindcss":              "^3.0.0",
+    "autoprefixer":             "^10.0.0",
+    "typescript":               "^5.0.0",
+    "vite":                     "^5.0.0",
+    "vitest":                   "^1.0.0",
+    "@playwright/test":         "^1.0.0",
+    "eslint":                   "^8.0.0",
+    "prettier":                 "^3.0.0"
+  }
+}
+```
+
+**Core bundle** (no IPFS): ~180KB gzipped
+**With IPFS** (lazy-loaded): additional ~800KB, only if user enables it
+
+---
+
+## 15. DEPLOYMENT
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run lint
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: build }
+      - uses: actions/deploy-pages@v4
+        id: deploy
+```
+
+```javascript
+// svelte.config.js
+import adapter from '@sveltejs/adapter-static'
+export default {
+  kit: {
+    adapter: adapter({
+      pages: 'build', assets: 'build',
+      fallback: 'index.html', precompress: true,
+    }),
+  },
+}
+```
+
+---
+
+## 16. EXECUTION ORDER
+
+```
+PHASE 1 — Core (Weeks 1-2)
+  □ SvelteKit scaffold, Tailwind, TypeScript strict
+  □ Design system (tokens, base components)
+  □ Password → keypair derivation + tests
+  □ Encrypted localStorage
+  □ Auth store (login, logout, persona state)
+  □ Relay pool (connect, subscribe, publish)
+  □ Onboarding flow (create account, NIP-07 option)
+  □ Basic home feed (subscribe relays, render kind:1)
+  □ Layout (header, sidebar, footer, relay status)
+
+PHASE 2 — Communities & Threads (Weeks 2-3)
+  □ NIP-72 community: create, subscribe, display
+  □ Thread list page with sort controls
+  □ Thread composer (markdown editor, submit)
+  □ Thread view (root + NIP-10 reply tree)
+  □ Reply composer with correct NIP-10 tags
+  □ Pagination component
+  □ Markdown renderer (with external image blocking)
+
+PHASE 3 — Identity & Personas (Week 3)
+  □ Multiple persona support (pseudonyms, ephemeral)
+  □ Persona switcher UI
+  □ Profile view + editor (kind:0)
+  □ Persona badge component
+  □ NIP-07 extension support (detect + use)
+
+PHASE 4 — Voting & Algorithm (Week 4)
+  □ Semantic vote buttons (5 types, NIP-25)
+  □ Score engine (client-side, all signals)
+  □ Sort controls (5 strategies)
+  □ Score explainer component
+  □ Algorithm settings page (weight sliders)
+  □ Community health display
+
+PHASE 5 — Media (Week 4-5)
+  □ EXIF strip (OffscreenCanvas)
+  □ NIP-96 upload (nostr.build primary + fallbacks)
+  □ Upload progress UI
+  □ Media display component (click-to-load)
+  □ File metadata events (NIP-94)
+  □ IPFS optional layer (lazy-loaded, gated by setting)
+
+PHASE 6 — Privacy & Messaging (Week 5-6)
+  □ Private DMs (NIP-44 + NIP-59)
+  □ Encrypted storage init on login
+  □ Panic wipe (button + Ctrl+Shift+X)
+  □ Privacy settings page (honest model documentation)
+  □ External link warning dialogs
+  □ Transport section in settings (document Tor option)
+
+PHASE 7 — Moderation (Week 6)
+  □ Report dialog (NIP-56)
+  □ Mod action events (kind:9000)
+  □ Mod queue (for moderators)
+  □ Mod log page (public)
+  □ Community settings (moderators only)
+
+PHASE 8 — Search, Explore, Notifications (Week 7)
+  □ Search (nostr.band + local fallback)
+  □ Explore page (community discovery)
+  □ ActivityPub bridge (Lemmy read)
+  □ Notifications (replies + mentions)
+  □ Data export (IPFS CID or JSON download)
+
+PHASE 9 — Polish (Week 8)
+  □ PWA manifest
+  □ Offline reading (cached threads)
+  □ Full accessibility audit (axe-core)
+  □ Performance audit (Lighthouse)
+  □ Security audit (npm audit, CSP headers)
+  □ Cross-browser testing (Chrome, Firefox, Safari, mobile)
+  □ Documentation
+  □ Deploy to GitHub Pages
+```
+
+---
+
+## 17. CODE GENERATION RULES
+
+```
+1. COMPLETE FILES
+   Every generated file is complete and immediately runnable.
+   No TODOs, no placeholder functions, no "implement this later".
+
+2. MOBILE FIRST
+   Every component works on a 375px screen.
+   Touch targets ≥ 44px. No hover-only interactions.
+
+3. ACCESSIBILITY
+   ARIA attributes on first write, not as a polish pass.
+   Every interactive element is keyboard accessible.
+   All images have alt text. Live regions for dynamic content.
+
+4. HONEST ERROR HANDLING
+   Network failures show clear, actionable messages.
+   "Relay connection failed — check your internet connection"
+   not "Error: WebSocket closed with code 1006".
+
+5. PROGRESSIVE ENHANCEMENT
+   Core reading works without JavaScript (SSR).
+   Posting requires JS. Document this.
+
+6. NO EXTERNAL REQUESTS FROM app.html
+   Zero CDN links. Zero external scripts. Zero Google Fonts.
+   System font stack. All assets in build output.
+   CSP header enforces this.
+
+7. SECURITY
+   No .unwrap()-equivalent (no unchecked .json()!).
+   Every crypto operation has error handling.
+   User-facing crypto errors explain what happened
+   and what to do, not stack traces.
+
+8. WHEN UNCERTAIN
+   Choose: simpler, more private, more honest.
+   Document the choice in a comment.
+```
+
+---
+
+**Begin with Phase 1. Ship working code at the end of each phase.**

@@ -1,0 +1,42 @@
+The best path forward is **Option 3: Keep React but go pure client-side.**
+
+This allows you to leverage the UI work you’ve already done in React while pivoting to the "Always Free" and "Privacy First" architecture. By dropping the Express/Postgres backend, you remove the infrastructure cost, the central point of failure, and the legal liability of hosting user data.
+
+### The Migration Strategy
+
+#### 1. Decouple the Backend (Drop Express + Postgres)
+Instead of fetching from your own API, all data will now flow through a **Nostr Client Provider** in React.
+*   **The Database is now the Relays:** Instead of `SELECT * FROM posts`, you will use `pool.query(relays, { kinds: [1, 34550] })`.
+*   **The Cache is now IndexedDB:** Instead of a server-side Postgres cache, use `idb` or `dexie` in the browser to store events for offline use and fast loading.
+
+#### 2. Port the "Red Team" Security to React
+You don't need Svelte to implement the security fixes. You can implement them as React Hooks or Utility classes:
+*   **Identity Hook**: Create a `useAuth` hook that handles the **Argon2id derivation in a Web Worker**.
+*   **PoW Utility**: Create a `useMinter` hook that performs the NIP-13 Proof of Work before a post is sent to the `publish` function.
+*   **Media Component**: Update your Image component to handle the "click-to-load" and "multi-source" redundancy (NIP-94/96).
+
+#### 3. Shift the Routing
+Since you are moving to GitHub Pages:
+*   Use `HashRouter` (React Router) or a similar strategy to ensure that deep links work on a static host without a server redirecting `404`s.
+
+#### 4. Revised Directory Structure (React-based)
+```
+src/
+├── components/         # UI Components (React)
+├── hooks/
+│   ├── useNostr.ts     # Relay pooling & Subscriptions
+│   ├── useAuth.ts      # Argon2 Identity derivation
+│   └── useMedia.ts     # NIP-96 Multi-upload logic
+├── services/
+│   ├── worker.ts       # Argon2 Web Worker thread
+│   ├── pow.ts          # NIP-13 Miner
+│   └── crypto.ts       # Encrypted IndexedDB wrappers
+└── store/              # Global state (Zustand or Context)
+```
+
+### Why this is the winning move:
+1.  **Zero Cost:** You stop paying for (or managing) a VPS/Database.
+2.  **Dev Speed:** You keep your existing React components (Markdown rendering, Layouts, CSS).
+3.  **True Decentralization:** You prove that the app can survive even if your GitHub account is deleted, because the data lives on the Nostr network.
+
+**Action for Agent:** Begin by stripping out the API calls and replacing them with a basic `SimplePool` connection to `wss://relay.damus.io` and `wss://nos.lol`. Create the `Argon2` Web Worker first to ensure login security is solid.
