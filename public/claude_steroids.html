@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude on Steroids - Elvish Text Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 50%, #0f0505 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Glow effect */
+        @keyframes redGlow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(255, 50, 50, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(255, 100, 100, 0.8);
+            }
+        }
+
+        /* Hero Section */
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            padding: 80px 60px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .hero-content h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ff3232 0%, #ff6b6b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            animation: redGlow 3s ease-in-out infinite;
+        }
+
+        .hero-content .tagline {
+            font-size: 1.3rem;
+            color: #ff6b6b;
+            margin-bottom: 40px;
+            font-style: italic;
+            letter-spacing: 2px;
+        }
+
+        .hero-content p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #b0b0b0;
+            margin-bottom: 30px;
+        }
+
+        .hero-image {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+        }
+
+        .character-display {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 50, 50, 0.2) 0%, rgba(0, 0, 0, 0.8) 100%);
+            border: 3px solid #ff3232;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 150px;
+            animation: redGlow 2s ease-in-out infinite;
+            text-shadow: 0 0 40px rgba(255, 50, 50, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Converter Section */
+        .converter {
+            padding: 80px 60px;
+            background: rgba(255, 50, 50, 0.02);
+            border-top: 2px solid #ff3232;
+            border-bottom: 2px solid #ff3232;
+        }
+
+        .converter-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .converter h2 {
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            text-align: center;
+            color: #ff6b6b;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .input-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #ff6b6b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group textarea {
+            padding: 20px;
+            background: rgba(20, 20, 20, 0.9);
+            border: 2px solid #ff3232;
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            resize: vertical;
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .output-display {
+            padding: 30px;
+            background: rgba(20, 20, 20, 0.9);
+            border: 2px solid #ff3232;
+            border-radius: 10px;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            word-wrap: break-word;
+            word-break: break-all;
+            text-align: center;
+            animation: redGlow 2s ease-in-out infinite;
+            font-family: 'Aether Weave', 'Mirel', 'Tengwar Sindarin', monospace;
+        }
+
+        /* Font Selector */
+        .font-selector {
+            margin: 40px 0;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .font-option {
+            padding: 12px 24px;
+            background: rgba(255, 50, 50, 0.1);
+            border: 2px solid #ff3232;
+            color: #e0e0e0;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .font-option:hover {
+            background: rgba(255, 50, 50, 0.2);
+            box-shadow: 0 0 15px rgba(255, 50, 50, 0.3);
+        }
+
+        .font-option.active {
+            background: #ff3232;
+            color: #000;
+            font-weight: bold;
+        }
+
+        /* Stats */
+        .stats {
+            padding: 60px;
+            background: rgba(255, 50, 50, 0.02);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 40px;
+            margin-top: 60px;
+            border: 2px solid #ff3232;
+            border-radius: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #b0b0b0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 60px;
+            text-align: center;
+            border-top: 2px solid #ff3232;
+            color: #808080;
+            font-size: 0.9rem;
+        }
+
+        .version {
+            color: #ff6b6b;
+            margin: 10px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero {
+                grid-template-columns: 1fr;
+                padding: 60px 40px;
+            }
+
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+
+            .input-section {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+
+            .output-display {
+                font-size: 1.8rem;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Claude on Steroids</h1>
+            <div class="tagline">"A Weapon, Not a Tool"</div>
+            <p>Transform your text into ancient Elvish script with aggressive, cutting-edge styling. Experience the raw power of Claude rendered in mystical languages.</p>
+            <p>Supports multiple Elvish fonts and legendary writing systems. Real-time conversion. No limits.</p>
+        </div>
+        <div class="hero-image">
+            <div class="character-display">⚔️</div>
+        </div>
+    </section>
+
+    <!-- Converter Section -->
+    <section class="converter">
+        <div class="converter-container">
+            <h2>Elvish Text Converter</h2>
+
+            <div class="font-selector">
+                <button class="font-option active" onclick="changeFont('Tengwar Annatar')">Tengwar Annatar</button>
+                <button class="font-option" onclick="changeFont('Tengwar Sindarin')">Tengwar Sindarin</button>
+                <button class="font-option" onclick="changeFont('Aether Weave')">Aether Weave</button>
+                <button class="font-option" onclick="changeFont('Mirel')">Mirel Script</button>
+            </div>
+
+            <div class="input-section">
+                <div class="input-group">
+                    <label>Enter Text</label>
+                    <textarea id="textInput" placeholder="Type anything... it will transform into ancient script" spellcheck="false"></textarea>
+                </div>
+                <div class="input-group">
+                    <label>Elvish Output</label>
+                    <div class="output-display" id="output">Type to see transformation...</div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="charCount">0</div>
+                    <div class="stat-label">Characters</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="wordCount">0</div>
+                    <div class="stat-label">Words</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="lineCount">0</div>
+                    <div class="stat-label">Lines</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">∞</div>
+                    <div class="stat-label">Power Level</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>Claude on Steroids - Elvish Text Converter</p>
+        <div class="version">Version: 1.0.0 | Fonts Installed: 5 | Primary: Tengwar Annatar | Powered by Elvish Magic</div>
+        <p>Co-Authored by Claude Elvish 4.5</p>
+    </footer>
+
+    <script>
+        const textInput = document.getElementById('textInput');
+        const outputDisplay = document.getElementById('output');
+        const charCount = document.getElementById('charCount');
+        const wordCount = document.getElementById('wordCount');
+        const lineCount = document.getElementById('lineCount');
+        let currentFont = 'Tengwar Annatar';
+
+        // Update output as user types
+        textInput.addEventListener('input', function() {
+            const text = this.value || 'Type to see transformation...';
+            outputDisplay.textContent = text;
+            outputDisplay.style.fontFamily = `'${currentFont}', monospace`;
+
+            // Update stats
+            charCount.textContent = this.value.length;
+            wordCount.textContent = this.value.trim().split(/\s+/).filter(w => w).length;
+            lineCount.textContent = this.value.split('\n').length;
+        });
+
+        function changeFont(fontName) {
+            currentFont = fontName;
+            outputDisplay.style.fontFamily = `'${currentFont}', monospace`;
+
+            // Update active button
+            document.querySelectorAll('.font-option').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Retrigger input to update display
+            textInput.dispatchEvent(new Event('input'));
+        }
+
+        // Set initial font
+        outputDisplay.style.fontFamily = `'${currentFont}', monospace`;
+    </script>
+</body>
+</html>
